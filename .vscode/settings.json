@@ -1,4 +1,14 @@
 {
     "C_Cpp.default.configurationProvider": "cmsis-csolution",
-    "cmake.sourceDirectory": "C:/work/stm32/Arm_STD/tmp"
+    "cmake.sourceDirectory": "C:/work/stm32/Arm_STD/tmp",
+    "cmsis-csolution.actions": [
+        {
+            "path": "Arm_STD.csolution.yml",
+            "target": "STM32F103C8",
+            "config": {
+                "run": "Flash Device",
+                "debug": "Arm Debugger"
+            }
+        }
+    ]
 }

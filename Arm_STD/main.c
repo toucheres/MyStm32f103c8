@@ -27,9 +27,9 @@ int main(void)
     while (1)
     {
         // LED闪烁代码，如果只需常亮可删除这部分
-        // GPIO_SetBits(GPIOA, GPIO_Pin_0);   // LED亮
-        // Delay(500000);                     // 延时
-        // GPIO_ResetBits(GPIOA, GPIO_Pin_0); // LED灭
-        // Delay(500000);                     // 延时
+        GPIO_SetBits(GPIOA, GPIO_Pin_0);   // LED亮
+        Delay(500000);                     // 延时
+        GPIO_ResetBits(GPIOA, GPIO_Pin_0); // LED灭
+        Delay(500000);                     // 延时
     }
 }
