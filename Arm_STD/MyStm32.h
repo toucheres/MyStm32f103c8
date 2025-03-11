@@ -10,7 +10,7 @@ enum Port
     PortF,
     PortG
 };
-enum class Pin
+enum Pin
 {
     Pin0,
     Pin1,
@@ -57,6 +57,7 @@ class IO_Write;
 class IO
 {
     static uint16_t used[3];
+
 public:
     static bool sign(Port _port, Pin _pin)
     {
@@ -357,6 +358,89 @@ public:
 };
 uint16_t IO::used[3] = {0, 0, 0};
 static const IO io;
+// RCC_LSEConfig(uint8_t RCC_LSE);
+// 用于配置低速外部（LSE）时钟的工作模式。根据传入的参数（通常为不同的启动方式或配置选项），设置LSE晶振的运行方式。
+
+// RCC_LSICmd(FunctionalState NewState);
+// 用于开启或关闭低速内部（LSI）振荡器。参数通常为 ENABLE 或 DISABLE，用于控制该振荡器是否工作。
+
+// RCC_RTCCLKConfig(uint32_t RCC_RTCCLKSource);
+// 用于配置实时时钟（RTC）的时钟源。这可以选择为LSE、LSI或其它外部时钟输入，确保RTC模块使用正确的时钟信号。
+
+// RCC_RTCCLKCmd(FunctionalState NewState);
+// 用于使能或禁用RTC时钟。通过传递 ENABLE / DISABLE 来控制RTC模块是否获得时钟信号。
+
+//                                          RCC_GetClocksFreq(RCC_ClocksTypeDef RCC_Clocks);
+// *用于获取系统各个时钟（如系统时钟 SYSCLK, AHB时钟, APB1 / 2时钟等）的当前频率配置。结果会填充到传入的结构体中。
+
+//                                                        RCC_AHBPeriphClockCmd(uint32_t RCC_AHBPeriph, FunctionalState NewState);
+// 用于控制 AHB 总线上外设的时钟开关。传入具体外设标识和开关状态，决定该外设是否获得时钟RCC_ lockC = md(uRCC_  Func = tionalState NewState);
+// 与上一个类似，但用于 APB2 总线上外设的时钟控制。
+
+// RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
+// 同样用于 APB1 总线外设的时钟控制
+enum ppp
+{
+    RCC_AFIO = ((uint32_t)0x00000001),
+    RCC_GPIOA = ((uint32_t)0x00000004),
+    RCC_GPIOB = ((uint32_t)0x00000008),
+    RCC_GPIOC = ((uint32_t)0x00000010),
+    RCC_GPIOD = ((uint32_t)0x00000020),
+    RCC_GPIOE = ((uint32_t)0x00000040),
+    RCC_GPIOF = ((uint32_t)0x00000080),
+    RCC_GPIOG = ((uint32_t)0x00000100),
+    RCC_ADC1 = ((uint32_t)0x00000200),
+    RCC_ADC2 = ((uint32_t)0x00000400),
+    RCC_TIM1 = ((uint32_t)0x00000800),
+    RCC_SPI1 = ((uint32_t)0x00001000),
+    RCC_TIM8 = ((uint32_t)0x00002000),
+    RCC_USART = ((uint32_t)0x00004000),
+    RCC_ADC3 = ((uint32_t)0x00008000),
+    RCC_TIM15 = ((uint32_t)0x00010000),
+    RCC_TIM16 = ((uint32_t)0x00020000),
+    RCC_TIM17 = ((uint32_t)0x00040000),
+    RCC_TIM9 = ((uint32_t)0x00080000),
+    RCC_TIM10 = ((uint32_t)0x00100000),
+    RCC_TIM11 = ((uint32_t)0x00200000),
+};
+class Clock
+{
+public:
+    class Open
+    {
+    public:
+        static void APB1Periph(uint32_t RCC_APB2Periph)
+        {
+            RCC_APB1PeriphClockCmd(RCC_APB2Periph, ENABLE);
+        }
+        static void APB2Periph(uint32_t RCC_APB2Periph)
+        {
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
+        }
+        static void AHBPeriph(uint32_t RCC_AHBPeriph)
+        {
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph, ENABLE);
+        }
+
+    } open;
+    class Close
+    {
+    public:
+        static void APB1Periph(uint32_t RCC_APB2Periph)
+        {
+            RCC_APB1PeriphClockCmd(RCC_APB2Periph, DISABLE);
+        }
+        static void APB2Periph(uint32_t RCC_APB2Periph)
+        {
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph, DISABLE);
+        }
+        static void AHBPeriph(uint32_t RCC_AHBPeriph)
+        {
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
+        }
+
+    } close;
+} clock;
 
 namespace Device
 {
@@ -364,11 +448,14 @@ namespace Device
     {
         const Port port;
         const Pin pin;
+
+    public:
         LED(Port _port, Pin _pin, GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, GPIOMode_TypeDef mode = IOMode::Out_PP)
             : pin(_pin), port(_port)
         {
             if (io.sign(_port, _pin))
             {
+                clock.open.APB2Periph(RCC_GPIOA);
                 GPIO_InitTypeDef GPIO_InitStructure;
                 GPIO_InitStructure.GPIO_Pin = IO::getPinx(_pin);
                 GPIO_InitStructure.GPIO_Mode = mode;
@@ -376,22 +463,8 @@ namespace Device
                 // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
                 GPIO_TypeDef *GPIOx = IO::getGPIOx(port);
                 GPIO_Init(GPIOx, &GPIO_InitStructure);
+                io.ResetBits(::PortA, ::Pin0);
             }
         }
     };
-};
-
-class MyDevice
-{
-    void exec()
-    {
-
-        io.init.PortA.Pin3(IOMode::Out_OD);          // 初始化PortA的3号口
-        io.init.PortA.Pins(IOMode::Out_PP, 1, 2, 3); // 初始化PortA的1,2,3...（数量可变）号口
-        io.read.PortA.Pin0();                        // 读PortA的0号口(bool)
-        io.read.PortA.Pins();                        // 读PortA返回uint16_t
-        io.write.PortA.Pin0(1);                      // 写入1到ProtA的0号口
-        io.write.PortA.Pin0(0);                      // 写入0到ProtA的0号口
-        io.write.PortA.Pins(0b1111111111111111);     // 写入1111111111111111到ProtA
-    }
 };
