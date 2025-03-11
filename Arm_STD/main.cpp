@@ -12,7 +12,7 @@ void Delay(uint32_t count)
 
 class MyDevice
 {
-    Device::LED led{PortA, Pin0};
+    Device::LED led{Port::PortA, Pin::Pin0};
 public:
     void exec()
     {

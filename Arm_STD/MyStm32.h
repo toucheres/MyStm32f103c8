@@ -1,6 +1,5 @@
 #include "stm32f10x.h"
-
-enum Port
+enum Port_abandoned
 {
     PortA,
     PortB,
@@ -10,26 +9,26 @@ enum Port
     PortF,
     PortG
 };
-class Port_test
+class Port
 {
 public:
-    static const GPIO_TypeDef *PortA;
-    static const GPIO_TypeDef *PortB;
-    static const GPIO_TypeDef *PortC;
-    static const GPIO_TypeDef *PortD;
-    static const GPIO_TypeDef *PortE;
-    static const GPIO_TypeDef *PortF;
-    static const GPIO_TypeDef *PortG;
+    static GPIO_TypeDef *PortA;
+    static GPIO_TypeDef *PortB;
+    static GPIO_TypeDef *PortC;
+    static GPIO_TypeDef *PortD;
+    static GPIO_TypeDef *PortE;
+    static GPIO_TypeDef *PortF;
+    static GPIO_TypeDef *PortG;
 };
-const GPIO_TypeDef *Port_test::PortA = reinterpret_cast<const GPIO_TypeDef *>(GPIOA_BASE);
-const GPIO_TypeDef *Port_test::PortB = reinterpret_cast<const GPIO_TypeDef *>(GPIOB_BASE);
-const GPIO_TypeDef *Port_test::PortC = reinterpret_cast<const GPIO_TypeDef *>(GPIOC_BASE);
-const GPIO_TypeDef *Port_test::PortD = reinterpret_cast<const GPIO_TypeDef *>(GPIOD_BASE);
-const GPIO_TypeDef *Port_test::PortE = reinterpret_cast<const GPIO_TypeDef *>(GPIOE_BASE);
-const GPIO_TypeDef *Port_test::PortF = reinterpret_cast<const GPIO_TypeDef *>(GPIOF_BASE);
-const GPIO_TypeDef *Port_test::PortG = reinterpret_cast<const GPIO_TypeDef *>(GPIOG_BASE);
+GPIO_TypeDef *Port::PortA = GPIOA;
+GPIO_TypeDef *Port::PortB = GPIOB;
+GPIO_TypeDef *Port::PortC = GPIOC;
+GPIO_TypeDef *Port::PortD = GPIOD;
+GPIO_TypeDef *Port::PortE = GPIOE;
+GPIO_TypeDef *Port::PortF = GPIOF;
+GPIO_TypeDef *Port::PortG = GPIOG;
 
-enum Pin
+enum Pin_abandoned
 {
     Pin0,
     Pin1,
@@ -48,8 +47,9 @@ enum Pin
     Pin14,
     Pin15
 };
-class Pin_
+class Pin
 {
+public:
     static const uint16_t Pin0 = GPIO_Pin_0;
     static const uint16_t Pin1 = GPIO_Pin_1;
     static const uint16_t Pin2 = GPIO_Pin_2;
@@ -96,30 +96,17 @@ class IO_Write;
 class IO
 {
     static uint16_t used[3];
-
 public:
-    // static bool sign(Port _port, Pin _pin)
-    // {
-    //     if (used[_port] & (1 << static_cast<uint16_t>(_pin)))
-    //     {
-    //         return false;
-    //     }
-    //     else
-    //     {
-    //         used[_port] &= (1 << static_cast<uint16_t>(_pin));
-    //         return true;
-    //     }
-    // }
-    static bool sign(GPIO_TypeDef *_port, uint16_t _pin)
+    static bool sign(const GPIO_TypeDef *_port,const uint16_t _pin)
     {
         int index = 0;
-        if (_port == Port_test::PortA)
+        if (_port == Port::PortA)
             index = 0;
-        else if (_port == Port_test::PortB)
+        else if (_port == Port::PortB)
             index = 1;
-        else if (_port == Port_test::PortC)
+        else if (_port == Port::PortC)
             index = 2;
-        else if (_port == Port_test::PortD)
+        else if (_port == Port::PortD)
             index = 3;
         if (used[index] & _pin)
         {
@@ -166,10 +153,10 @@ public:
                 appendPins(pinMask, pins...);
                 doInitPins(port, pinMask, mode);
             }
-            explicit PortProxy(Port p) : port(p) {}
+            explicit PortProxy(Port_abandoned p) : port(p) {}
 
         private:
-            Port port;
+            Port_abandoned port;
             // 递归展开可变参数
             template <typename... Args>
             static void appendPins(uint16_t &mask, uint8_t pin, Args... pins)
@@ -182,7 +169,7 @@ public:
             static void appendPins(uint16_t &mask) {}
 
             // 实际执行引脚初始化
-            static void doInitPin(Port port, uint16_t pin, GPIOMode_TypeDef mode)
+            static void doInitPin(Port_abandoned port, uint16_t pin, GPIOMode_TypeDef mode)
             {
                 GPIO_InitTypeDef GPIO_InitStructure;
                 GPIO_InitStructure.GPIO_Pin = pin;
@@ -194,7 +181,7 @@ public:
             }
 
             // 初始化多个引脚
-            static void doInitPins(Port port, uint16_t pinMask, GPIOMode_TypeDef mode)
+            static void doInitPins(Port_abandoned port, uint16_t pinMask, GPIOMode_TypeDef mode)
             {
                 GPIO_InitTypeDef GPIO_InitStructure;
                 GPIO_InitStructure.GPIO_Pin = pinMask;
@@ -209,7 +196,7 @@ public:
         };
 
         // 各端口代理对象
-        PortProxy PortA{/*Port*/ ::PortA};
+        PortProxy PortA{/*Port_abandoned*/ ::PortA};
         PortProxy PortB{::PortB};
         PortProxy PortC{::PortC};
         PortProxy PortD{::PortD};
@@ -254,19 +241,19 @@ public:
             {
                 return doReadPort(port);
             }
-            explicit PortProxy(Port p) : port(p) {}
+            explicit PortProxy(Port_abandoned p) : port(p) {}
 
         private:
-            Port port;
+            Port_abandoned port;
             // 读单个引脚
-            static bool doReadPin(Port port, uint16_t pin)
+            static bool doReadPin(Port_abandoned port, uint16_t pin)
             {
                 GPIO_TypeDef *GPIOx = getGPIOx(port);
                 return GPIO_ReadInputDataBit(GPIOx, pin) != 0;
             }
 
             // 读整个端口
-            static uint16_t doReadPort(Port port)
+            static uint16_t doReadPort(Port_abandoned port)
             {
                 GPIO_TypeDef *GPIOx = getGPIOx(port);
                 return GPIO_ReadInputData(GPIOx);
@@ -318,18 +305,18 @@ public:
             }
 
         private:
-            Port port;
-            explicit PortProxy(Port p) : port(p) {}
+            Port_abandoned port;
+            explicit PortProxy(Port_abandoned p) : port(p) {}
 
             // 写单个引脚
-            static void doWritePin(Port port, uint16_t pin, BitAction value)
+            static void doWritePin(Port_abandoned port, uint16_t pin, BitAction value)
             {
                 GPIO_TypeDef *GPIOx = getGPIOx(port);
                 GPIO_WriteBit(GPIOx, pin, value);
             }
 
             // 写整个端口
-            static void doWritePort(Port port, uint16_t value)
+            static void doWritePort(Port_abandoned port, uint16_t value)
             {
                 GPIO_TypeDef *GPIOx = getGPIOx(port);
                 GPIO_Write(GPIOx, value);
@@ -348,7 +335,7 @@ public:
         PortProxy PortG{::PortG};
     };
     // 获取GPIO基址的辅助函数
-    static GPIO_TypeDef *getGPIOx(::Port port)
+    static GPIO_TypeDef *getGPIOx(::Port_abandoned port)
     {
         switch (port)
         {
@@ -370,39 +357,39 @@ public:
             return nullptr;
         }
     }
-    static uint16_t getPinx(::Pin port)
+    static uint16_t getPinx(::Pin_abandoned port)
     {
         return 1 << static_cast<uint16_t>(port);
     }
-    static inline uint8_t ReadInputDataBit(Port port, Pin pin)
+    static inline uint8_t ReadInputDataBit(Port_abandoned port, Pin_abandoned pin)
     {
         return GPIO_ReadInputDataBit(IO::getGPIOx(port), IO::getPinx(pin));
     }
-    static inline uint16_t ReadInputData(Port port)
+    static inline uint16_t ReadInputData(Port_abandoned port)
     {
         return GPIO_ReadInputData(IO::getGPIOx(port));
     }
-    static inline uint8_t ReadOutputDataBit(Port port, Pin pin)
+    static inline uint8_t ReadOutputDataBit(Port_abandoned port, Pin_abandoned pin)
     {
         return GPIO_ReadOutputDataBit(IO::getGPIOx(port), IO::getPinx(pin));
     }
-    static inline uint16_t ReadOutputData(Port port)
+    static inline uint16_t ReadOutputData(Port_abandoned port)
     {
         return GPIO_ReadOutputData(IO::getGPIOx(port));
     }
-    static void SetBits(Port GPIOx, Pin GPIO_Pin)
+    static void SetBits(Port_abandoned GPIOx, Pin_abandoned GPIO_Pin)
     {
         GPIO_SetBits(IO::getGPIOx(GPIOx), IO::getPinx(GPIO_Pin));
     }
-    static void ResetBits(Port GPIOx, Pin GPIO_Pin)
+    static void ResetBits(Port_abandoned GPIOx, Pin_abandoned GPIO_Pin)
     {
         GPIO_ResetBits(IO::getGPIOx(GPIOx), IO::getPinx(GPIO_Pin));
     }
-    static void WriteBit(Port GPIOx, Pin GPIO_Pin, bool val)
+    static void WriteBit(Port_abandoned GPIOx, Pin_abandoned GPIO_Pin, bool val)
     {
         GPIO_WriteBit(IO::getGPIOx(GPIOx), IO::getPinx(GPIO_Pin), static_cast<BitAction>(val));
     }
-    static void Write(Port GPIOx, Pin PortVal)
+    static void Write(Port_abandoned GPIOx, Pin_abandoned PortVal)
     {
         GPIO_Write(IO::getGPIOx(GPIOx), IO::getPinx(PortVal));
     }
@@ -413,20 +400,63 @@ public:
 
     class
     {
-        Port port;
-        static void doWritePin(Port port, uint16_t pin, BitAction value)
+        GPIO_TypeDef *port;
+        static void doInitPin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode)
         {
-            GPIO_TypeDef *GPIOx = getGPIOx(port);
-            GPIO_WriteBit(GPIOx, pin, value);
+            GPIO_InitTypeDef GPIO_InitStructure;
+            GPIO_InitStructure.GPIO_Pin = pin;
+            GPIO_InitStructure.GPIO_Mode = mode;
+            GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+            GPIO_Init(port, &GPIO_InitStructure);
         }
 
     public:
-        class Port_temp
+        class Port_Init
         {
-            Port port;
+            GPIO_TypeDef *port;
 
         public:
-            Port_temp(Port _port) : port(_port) {}
+            Port_Init(GPIO_TypeDef *_port) : port(_port) {}
+            void Pin0(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_0, mode); }
+            void Pin1(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_1, mode); }
+            void Pin2(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_2, mode); }
+            void Pin3(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_3, mode); }
+            void Pin4(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_4, mode); }
+            void Pin5(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_5, mode); }
+            void Pin6(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_6, mode); }
+            void Pin7(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_7, mode); }
+            void Pin8(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_8, mode); }
+            void Pin9(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_9, mode); }
+            void Pin10(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_10, mode); }
+            void Pin11(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_11, mode); }
+            void Pin12(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_12, mode); }
+            void Pin13(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_13, mode); }
+            void Pin14(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_14, mode); }
+            void Pin15(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_15, mode); }
+        };
+        Port_Init ProtA{Port::PortA};
+        Port_Init ProtB{Port::PortB};
+        Port_Init ProtC{Port::PortC};
+        Port_Init ProtD{Port::PortD};
+        Port_Init ProtE{Port::PortE};
+        Port_Init ProtF{Port::PortF};
+    } ini;
+
+    class
+    {
+        GPIO_TypeDef *port;
+        static void doWritePin(GPIO_TypeDef *port, uint16_t pin, BitAction value)
+        {
+            GPIO_WriteBit(port, pin, value);
+        }
+
+    public:
+        class Port_Write
+        {
+            GPIO_TypeDef *port;
+
+        public:
+            Port_Write(GPIO_TypeDef *_port) : port(_port) {}
             void Pin0(uint8_t value) const { doWritePin(port, GPIO_Pin_0, value != 0 ? Bit_SET : Bit_RESET); }
             void Pin1(uint8_t value) const { doWritePin(port, GPIO_Pin_1, value != 0 ? Bit_SET : Bit_RESET); }
             void Pin2(uint8_t value) const { doWritePin(port, GPIO_Pin_2, value != 0 ? Bit_SET : Bit_RESET); }
@@ -444,12 +474,12 @@ public:
             void Pin14(uint8_t value) const { doWritePin(port, GPIO_Pin_14, value != 0 ? Bit_SET : Bit_RESET); }
             void Pin15(uint8_t value) const { doWritePin(port, GPIO_Pin_15, value != 0 ? Bit_SET : Bit_RESET); }
         };
-        Port_temp ProtA{::PortA};
-        Port_temp ProtB{::PortA};
-        Port_temp ProtC{::PortA};
-        Port_temp ProtD{::PortA};
-        Port_temp ProtE{::PortA};
-        Port_temp ProtF{::PortA};
+        Port_Write ProtA{Port::PortA};
+        Port_Write ProtB{Port::PortB};
+        Port_Write ProtC{Port::PortC};
+        Port_Write ProtD{Port::PortD};
+        Port_Write ProtE{Port::PortE};
+        Port_Write ProtF{Port::PortF};
     } wri;
 
     class
@@ -463,10 +493,10 @@ public:
     public:
         class Port_read
         {
-            const GPIO_TypeDef *port;
+            GPIO_TypeDef *port;
 
         public:
-            Port_read(const GPIO_TypeDef *_port) : port(_port) {}
+            Port_read(GPIO_TypeDef *_port) : port(_port) {}
             void Pin0(uint8_t value) const { doReadPin(port, GPIO_Pin_0); }
             void Pin1(uint8_t value) const { doReadPin(port, GPIO_Pin_1); }
             void Pin2(uint8_t value) const { doReadPin(port, GPIO_Pin_2); }
@@ -484,12 +514,12 @@ public:
             void Pin14(uint8_t value) const { doReadPin(port, GPIO_Pin_14); }
             void Pin15(uint8_t value) const { doReadPin(port, GPIO_Pin_15); }
         };
-        Port_read ProtA{Port_test::PortA};
-        Port_read ProtB{Port_test::PortA};
-        Port_read ProtC{Port_test::PortA};
-        Port_read ProtD{Port_test::PortA};
-        Port_read ProtE{Port_test::PortA};
-        Port_read ProtF{Port_test::PortA};
+        Port_read ProtA{Port::PortA};
+        Port_read ProtB{Port::PortA};
+        Port_read ProtC{Port::PortA};
+        Port_read ProtD{Port::PortA};
+        Port_read ProtE{Port::PortA};
+        Port_read ProtF{Port::PortA};
     } rea;
 } static io;
 uint16_t IO::used[3] = {0, 0, 0};
@@ -500,7 +530,7 @@ uint16_t IO::used[3] = {0, 0, 0};
 // RCC_LSICmd(FunctionalState NewState);
 // 用于开启或关闭低速内部（LSI）振荡器。参数通常为 ENABLE 或 DISABLE，用于控制该振荡器是否工作。
 
-// RCC_RTCCLKConfig(uint32_t RCC_RTCCLKSource);
+// RCC_RTCCLKConfig(uint32_t RTCCL_RCCKSource);
 // 用于配置实时时钟（RTC）的时钟源。这可以选择为LSE、LSI或其它外部时钟输入，确保RTC模块使用正确的时钟信号。
 
 // RCC_RTCCLKCmd(FunctionalState NewState);
@@ -509,62 +539,64 @@ uint16_t IO::used[3] = {0, 0, 0};
 //                                          RCC_GetClocksFreq(RCC_ClocksTypeDef RCC_Clocks);
 // *用于获取系统各个时钟（如系统时钟 SYSCLK, AHB时钟, APB1 / 2时钟等）的当前频率配置。结果会填充到传入的结构体中。
 
-//                                                        RCC_AHBPeriphClockCmd(uint32_t RCC_AHBPeriph, FunctionalState NewState);
+//                                                        RCC_AHBPeriphClockCmd(uint32_t AHBPe_RCCriph, FunctionalState NewState);
 // 用于控制 AHB 总线上外设的时钟开关。传入具体外设标识和开关状态，决定该外设是否获得时钟RCC_ lockC = md(uRCC_  Func = tionalState NewState);
 // 与上一个类似，但用于 APB2 总线上外设的时钟控制。
 
-// RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
+// RCC_APB1PeriphClockCmd(uint32_t APB1P_RCCeriph, FunctionalState NewState);
 // 同样用于 APB1 总线外设的时钟控制
-class RccProt
-{
-    static const uint32_t RCC_AFIO = ((uint32_t)0x00000001);
-    static const uint32_t RCC_GPIOA = ((uint32_t)0x00000004);
-    static const uint32_t RCC_GPIOB = ((uint32_t)0x00000008);
-    static const uint32_t RCC_GPIOC = ((uint32_t)0x00000010);
-    static const uint32_t RCC_GPIOD = ((uint32_t)0x00000020);
-    static const uint32_t RCC_GPIOE = ((uint32_t)0x00000040);
-    static const uint32_t RCC_GPIOF = ((uint32_t)0x00000080);
-    static const uint32_t RCC_GPIOG = ((uint32_t)0x00000100);
-    static const uint32_t RCC_ADC1 = ((uint32_t)0x00000200);
-    static const uint32_t RCC_ADC2 = ((uint32_t)0x00000400);
-    static const uint32_t RCC_TIM1 = ((uint32_t)0x00000800);
-    static const uint32_t RCC_SPI1 = ((uint32_t)0x00001000);
-    static const uint32_t RCC_TIM8 = ((uint32_t)0x00002000);
-    static const uint32_t RCC_USART = ((uint32_t)0x00004000);
-    static const uint32_t RCC_ADC3 = ((uint32_t)0x00008000);
-    static const uint32_t RCC_TIM15 = ((uint32_t)0x00010000);
-    static const uint32_t RCC_TIM16 = ((uint32_t)0x00020000);
-    static const uint32_t RCC_TIM17 = ((uint32_t)0x00040000);
-    static const uint32_t RCC_TIM9 = ((uint32_t)0x00080000);
-    static const uint32_t RCC_TIM10 = ((uint32_t)0x00100000);
-    static const uint32_t RCC_TIM11 = ((uint32_t)0x00200000);
-};
+
 class Clock
 {
 public:
+    class RccProt
+    {
+    public:
+        static const uint32_t AFIO_RCC= ((uint32_t)0x00000001);
+        static const uint32_t GPIOA_RCC = ((uint32_t)0x00000004);
+        static const uint32_t GPIOB_RCC = ((uint32_t)0x00000008);
+        static const uint32_t GPIOC_RCC = ((uint32_t)0x00000010);
+        static const uint32_t GPIOD_RCC = ((uint32_t)0x00000020);
+        static const uint32_t GPIOE_RCC = ((uint32_t)0x00000040);
+        static const uint32_t GPIOF_RCC = ((uint32_t)0x00000080);
+        static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
+        static const uint32_t ADC1_RCC= ((uint32_t)0x00000200);
+        static const uint32_t ADC2_RCC= ((uint32_t)0x00000400);
+        static const uint32_t TIM1_RCC= ((uint32_t)0x00000800);
+        static const uint32_t SPI1_RCC= ((uint32_t)0x00001000);
+        static const uint32_t TIM8_RCC= ((uint32_t)0x00002000);
+        static const uint32_t USART_RCC = ((uint32_t)0x00004000);
+        static const uint32_t ADC3_RCC= ((uint32_t)0x00008000);
+        static const uint32_t TIM15_RCC = ((uint32_t)0x00010000);
+        static const uint32_t TIM16_RCC = ((uint32_t)0x00020000);
+        static const uint32_t TIM17_RCC = ((uint32_t)0x00040000);
+        static const uint32_t TIM9_RCC= ((uint32_t)0x00080000);
+        static const uint32_t TIM10_RCC = ((uint32_t)0x00100000);
+        static const uint32_t TIM11_RCC = ((uint32_t)0x00200000);
+    }port_to_open;
     class Open
     {
     public:
-        static void APB1Periph(uint32_t RCC_APB2Periph)
+        static void APB1Periph(uint32_t RCC_APB1Periph)
         {
-            RCC_APB1PeriphClockCmd(RCC_APB2Periph, ENABLE);
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph, ENABLE);
         }
         static void APB2Periph(uint32_t RCC_APB2Periph)
         {
             RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
         }
-        static void AHBPeriph(uint32_t RCC_AHBPeriph)
+        static void AHBPeriph(uint32_t AHBPe_RCCriph)
         {
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph, ENABLE);
+            RCC_AHBPeriphClockCmd(AHBPe_RCCriph, ENABLE);
         }
 
     } open;
     class Close
     {
     public:
-        static void APB1Periph(uint32_t RCC_APB2Periph)
+        static void APB1Periph(uint32_t RCC_APB1Periph)
         {
-            RCC_APB1PeriphClockCmd(RCC_APB2Periph, DISABLE);
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph, DISABLE);
         }
         static void APB2Periph(uint32_t RCC_APB2Periph)
         {
@@ -582,21 +614,21 @@ namespace Device
 {
     class LED
     {
-        GPIO_TypeDef *port;
-        uint16_t pin;
+        const GPIO_TypeDef *port;
+        const uint16_t pin;
 
     public:
-        LED(GPIO_TypeDef *_port, uint16_t _pin, GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, GPIOMode_TypeDef mode = IOMode::Out_PP)
+        LED(const GPIO_TypeDef *_port, const uint16_t _pin, GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, GPIOMode_TypeDef mode = IOMode::Out_PP)
             : pin(_pin), port(_port)
         {
             if (io.sign(_port, _pin))
             {
-                // clock.open.APB2Periph();
+                clock.open.APB2Periph(clock.port_to_open.GPIOA_RCC);
                 GPIO_InitTypeDef GPIO_InitStructure;
                 GPIO_InitStructure.GPIO_Pin = pin;
                 GPIO_InitStructure.GPIO_Mode = mode;
                 GPIO_InitStructure.GPIO_Speed = Speed;
-                GPIO_TypeDef *GPIOx = port;
+                GPIO_TypeDef *GPIOx = const_cast<GPIO_TypeDef *>(port);
                 GPIO_Init(GPIOx, &GPIO_InitStructure);
                 io.ResetBits(PortA, Pin0);
             }
