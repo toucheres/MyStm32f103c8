@@ -16,6 +16,7 @@ class MyDevice
 public:
     void exec()
     {
+        
         while (1)
         {
             /* code */
