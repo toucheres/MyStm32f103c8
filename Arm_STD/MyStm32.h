@@ -1,5 +1,4 @@
 #include "stm32f10x.h"
-
 enum Port
 {
     PortA,
@@ -379,7 +378,7 @@ static const IO io;
 
 // RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
 // 同样用于 APB1 总线外设的时钟控制
-enum ppp
+enum
 {
     RCC_AFIO = ((uint32_t)0x00000001),
     RCC_GPIOA = ((uint32_t)0x00000004),
@@ -463,8 +462,14 @@ namespace Device
                 // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
                 GPIO_TypeDef *GPIOx = IO::getGPIOx(port);
                 GPIO_Init(GPIOx, &GPIO_InitStructure);
-                io.ResetBits(::PortA, ::Pin0);
+                io.ResetBits(PortA, Pin0);
             }
+        }
+        void open()
+        {}
+
+        void close()
+        {
         }
     };
 };

@@ -18,5 +18,5 @@
         "*.s": "plaintext",
         "stm32f10x.h": "c"
     },
-    "C_Cpp.default.compilerPath": "C:/Program Files/LLVM/bin/clang++.exe"
+    "C_Cpp.default.compilerPath": "C:/work/mingw64/bin/g++.exe"
 }
