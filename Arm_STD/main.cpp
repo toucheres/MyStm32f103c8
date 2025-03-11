@@ -1,6 +1,7 @@
 #include "RTE_Components.h"
 #include CMSIS_device_header
-
+#include "MyStm32.h"
+// 在Arm_STD.cproject.yml中添加文件
 void Delay(uint32_t count)
 {
     while (count--)
@@ -30,6 +31,7 @@ int main(void)
         GPIO_SetBits(GPIOA, GPIO_Pin_0);   // LED亮
         Delay(500000);                     // 延时
         GPIO_ResetBits(GPIOA, GPIO_Pin_0); // LED灭
-        Delay(500000);                     // 延时
+        Delay(500000);
+                            // 延时
     }
 }
