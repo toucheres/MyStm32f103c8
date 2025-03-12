@@ -1,5 +1,4 @@
 #include "stm32f10x.h"
-
 class Port
 {
 public:
@@ -18,7 +17,6 @@ GPIO_TypeDef *Port::PortD = GPIOD;
 GPIO_TypeDef *Port::PortE = GPIOE;
 GPIO_TypeDef *Port::PortF = GPIOF;
 GPIO_TypeDef *Port::PortG = GPIOG;
-
 class Pin
 {
 public:
@@ -39,7 +37,6 @@ public:
     static const uint16_t Pin14 = GPIO_Pin_14;
     static const uint16_t Pin15 = GPIO_Pin_15;
 };
-
 class IOMode
 {
 public:
@@ -60,16 +57,13 @@ public:
     static const GPIOSpeed_TypeDef _10MHz = GPIO_Speed_10MHz;
 };
 // 前向声明
-class IO_Read;
-class IO_Init;
-class IO_Write;
-
 // IO类 - 零内存开销设计
 class IO
 {
     static uint16_t used[3];
+
 public:
-    static bool sign(const GPIO_TypeDef *_port,const uint16_t _pin)
+    static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin)
     {
         int index = 0;
         if (_port == Port::PortA)
@@ -133,7 +127,7 @@ public:
         Port_Init ProtD{Port::PortD};
         Port_Init ProtE{Port::PortE};
         Port_Init ProtF{Port::PortF};
-    } init;
+    } static init;
 
     class
     {
@@ -173,7 +167,7 @@ public:
         Port_Write ProtD{Port::PortD};
         Port_Write ProtE{Port::PortE};
         Port_Write ProtF{Port::PortF};
-    } write;
+    } static write;
 
     class
     {
@@ -213,99 +207,103 @@ public:
         Port_read ProtD{Port::PortA};
         Port_read ProtE{Port::PortA};
         Port_read ProtF{Port::PortA};
-    } read;
+    } static read;
 
-    uint16_t read_port(GPIO_TypeDef *port)
+    static uint16_t read_port(GPIO_TypeDef *port)
     {
         return GPIO_ReadInputData(port);
     }
-    uint8_t read_pin(GPIO_TypeDef *port,uint16_t pin)
+    static uint8_t read_pin(GPIO_TypeDef *port, uint16_t pin)
     {
-        return GPIO_ReadInputDataBit(port,pin);
+        return GPIO_ReadInputDataBit(port, pin);
     }
-    void Write_port(GPIO_TypeDef *port, uint16_t val)
+    static void Write_port(GPIO_TypeDef *port, uint16_t val)
     {
         GPIO_Write(port, val);
     }
-    void Write_pin(GPIO_TypeDef *port, uint16_t pin, bool val)
+    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, bool val)
     {
-        GPIO_WriteBit(port, pin, val == true ?Bit_SET: Bit_RESET);
+        GPIO_WriteBit(port, pin, val == true ? Bit_SET : Bit_RESET);
     }
-    void Write_pin(GPIO_TypeDef *port, uint16_t pin, BitAction val)
+    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, BitAction val)
     {
         GPIO_WriteBit(port, pin, val);
     }
+    static void Change_pin(GPIO_TypeDef *port, uint16_t pin)
+    {
+        IO::Write_pin(port, pin, !IO::read_pin(port, pin));
+    }
 
-}
-static io;
+} static io;
 uint16_t IO::used[3] = {0, 0, 0};
 
 class Clock
+{
+public:
+    class RccProt
     {
     public:
-        class RccProt
+        static const uint32_t AFIO_RCC = ((uint32_t)0x00000001);
+        static const uint32_t GPIOA_RCC = ((uint32_t)0x00000004);
+        static const uint32_t GPIOB_RCC = ((uint32_t)0x00000008);
+        static const uint32_t GPIOC_RCC = ((uint32_t)0x00000010);
+        static const uint32_t GPIOD_RCC = ((uint32_t)0x00000020);
+        static const uint32_t GPIOE_RCC = ((uint32_t)0x00000040);
+        static const uint32_t GPIOF_RCC = ((uint32_t)0x00000080);
+        static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
+        static const uint32_t ADC1_RCC = ((uint32_t)0x00000200);
+        static const uint32_t ADC2_RCC = ((uint32_t)0x00000400);
+        static const uint32_t TIM1_RCC = ((uint32_t)0x00000800);
+        static const uint32_t SPI1_RCC = ((uint32_t)0x00001000);
+        static const uint32_t TIM8_RCC = ((uint32_t)0x00002000);
+        static const uint32_t USART_RCC = ((uint32_t)0x00004000);
+        static const uint32_t ADC3_RCC = ((uint32_t)0x00008000);
+        static const uint32_t TIM15_RCC = ((uint32_t)0x00010000);
+        static const uint32_t TIM16_RCC = ((uint32_t)0x00020000);
+        static const uint32_t TIM17_RCC = ((uint32_t)0x00040000);
+        static const uint32_t TIM9_RCC = ((uint32_t)0x00080000);
+        static const uint32_t TIM10_RCC = ((uint32_t)0x00100000);
+        static const uint32_t TIM11_RCC = ((uint32_t)0x00200000);
+    } port_to_open;
+    class Open
+    {
+    public:
+        static void APB1Periph(uint32_t RCC_APB1Periph)
         {
-        public:
-            static const uint32_t AFIO_RCC = ((uint32_t)0x00000001);
-            static const uint32_t GPIOA_RCC = ((uint32_t)0x00000004);
-            static const uint32_t GPIOB_RCC = ((uint32_t)0x00000008);
-            static const uint32_t GPIOC_RCC = ((uint32_t)0x00000010);
-            static const uint32_t GPIOD_RCC = ((uint32_t)0x00000020);
-            static const uint32_t GPIOE_RCC = ((uint32_t)0x00000040);
-            static const uint32_t GPIOF_RCC = ((uint32_t)0x00000080);
-            static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
-            static const uint32_t ADC1_RCC = ((uint32_t)0x00000200);
-            static const uint32_t ADC2_RCC = ((uint32_t)0x00000400);
-            static const uint32_t TIM1_RCC = ((uint32_t)0x00000800);
-            static const uint32_t SPI1_RCC = ((uint32_t)0x00001000);
-            static const uint32_t TIM8_RCC = ((uint32_t)0x00002000);
-            static const uint32_t USART_RCC = ((uint32_t)0x00004000);
-            static const uint32_t ADC3_RCC = ((uint32_t)0x00008000);
-            static const uint32_t TIM15_RCC = ((uint32_t)0x00010000);
-            static const uint32_t TIM16_RCC = ((uint32_t)0x00020000);
-            static const uint32_t TIM17_RCC = ((uint32_t)0x00040000);
-            static const uint32_t TIM9_RCC = ((uint32_t)0x00080000);
-            static const uint32_t TIM10_RCC = ((uint32_t)0x00100000);
-            static const uint32_t TIM11_RCC = ((uint32_t)0x00200000);
-        } port_to_open;
-        class Open
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph, ENABLE);
+        }
+        static void APB2Periph(uint32_t RCC_APB2Periph)
         {
-        public:
-            static void APB1Periph(uint32_t RCC_APB1Periph)
-            {
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph, ENABLE);
-            }
-            static void APB2Periph(uint32_t RCC_APB2Periph)
-            {
-                RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
-            }
-            static void AHBPeriph(uint32_t AHBPe_RCCriph)
-            {
-                RCC_AHBPeriphClockCmd(AHBPe_RCCriph, ENABLE);
-            }
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
+        }
+        static void AHBPeriph(uint32_t AHBPe_RCCriph)
+        {
+            RCC_AHBPeriphClockCmd(AHBPe_RCCriph, ENABLE);
+        }
 
-        } open;
-        class Close
+    } open;
+    class Close
+    {
+    public:
+        static void APB1Periph(uint32_t RCC_APB1Periph)
         {
-        public:
-            static void APB1Periph(uint32_t RCC_APB1Periph)
-            {
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph, DISABLE);
-            }
-            static void APB2Periph(uint32_t RCC_APB2Periph)
-            {
-                RCC_APB2PeriphClockCmd(RCC_APB2Periph, DISABLE);
-            }
-            static void AHBPeriph(uint32_t RCC_AHBPeriph)
-            {
-                RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
-            }
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph, DISABLE);
+        }
+        static void APB2Periph(uint32_t RCC_APB2Periph)
+        {
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph, DISABLE);
+        }
+        static void AHBPeriph(uint32_t RCC_AHBPeriph)
+        {
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
+        }
 
-        } close;
+    } close;
 } clock;
 
 namespace Device
 {
+    // 默认低电平
     class LED
     {
         GPIO_TypeDef *port;
@@ -326,12 +324,9 @@ namespace Device
                 io.Write_pin(port, pin, 0);
             }
         }
-        void open()
+        void turn()
         {
-        }
-
-        void close()
-        {
+            io.Change_pin(this->port, this->pin);
         }
     };
 };
