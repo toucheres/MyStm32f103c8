@@ -1,4 +1,5 @@
 #include "stm32f10x.h"
+// #include <vector>
 class Port
 {
 public:
@@ -299,7 +300,7 @@ public:
         }
 
     } close;
-} clock;
+} clocks;
 
 namespace Device
 {
@@ -308,6 +309,7 @@ namespace Device
     {
         GPIO_TypeDef *port;
         uint16_t pin;
+        // std::vector<int> a;
 
     public:
         LED(GPIO_TypeDef *_port, uint16_t _pin, GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, GPIOMode_TypeDef mode = IOMode::Out_PP)
@@ -315,7 +317,7 @@ namespace Device
         {
             if (io.sign(_port, _pin))
             {
-                clock.open.APB2Periph(clock.port_to_open.GPIOA_RCC);
+                clocks.open.APB2Periph(clocks.port_to_open.GPIOA_RCC);
                 GPIO_InitTypeDef GPIO_InitStructure;
                 GPIO_InitStructure.GPIO_Pin = pin;
                 GPIO_InitStructure.GPIO_Mode = mode;
