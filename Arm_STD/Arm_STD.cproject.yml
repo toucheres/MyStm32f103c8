@@ -7,8 +7,8 @@ project:
         - file: ./main.cpp
         # - file: ./MyStm32.cpp
 
-  # List components to use for your application.
-  # A software component is a re-usable unit that may be configurable.
+        # List components to use for your application.
+        # A software component is a re-usable unit that may be configurable.
   components:
     - component: ARM::CMSIS:CORE
     - component: Device:Startup
@@ -16,6 +16,7 @@ project:
     - component: Keil::Device:StdPeriph Drivers:Framework
     - component: Keil::Device:StdPeriph Drivers:GPIO
     - component: Keil::Device:StdPeriph Drivers:RCC
+    - component: Keil::Device:StdPeriph Drivers:TIM
 
   # List executable file formats to be generated.
   output:

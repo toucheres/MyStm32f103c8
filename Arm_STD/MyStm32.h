@@ -62,7 +62,7 @@ public:
 class IO
 {
     static uint16_t used[3];
-
+    // IO()=default;
 public:
     static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin)
     {
@@ -234,7 +234,6 @@ public:
     {
         IO::Write_pin(port, pin, !IO::read_pin(port, pin));
     }
-
 } static io;
 uint16_t IO::used[3] = {0, 0, 0};
 
@@ -254,17 +253,17 @@ public:
         static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
         static const uint32_t ADC1_RCC = ((uint32_t)0x00000200);
         static const uint32_t ADC2_RCC = ((uint32_t)0x00000400);
-        static const uint32_t TIM1_RCC = ((uint32_t)0x00000800);
+        static const uint32_t Timer_1_RCC = ((uint32_t)0x00000800);
         static const uint32_t SPI1_RCC = ((uint32_t)0x00001000);
         static const uint32_t TIM8_RCC = ((uint32_t)0x00002000);
         static const uint32_t USART_RCC = ((uint32_t)0x00004000);
         static const uint32_t ADC3_RCC = ((uint32_t)0x00008000);
-        static const uint32_t TIM15_RCC = ((uint32_t)0x00010000);
-        static const uint32_t TIM16_RCC = ((uint32_t)0x00020000);
-        static const uint32_t TIM17_RCC = ((uint32_t)0x00040000);
+        static const uint32_t Timer_15_RCC = ((uint32_t)0x00010000);
+        static const uint32_t Timer_16_RCC = ((uint32_t)0x00020000);
+        static const uint32_t Timer_17_RCC = ((uint32_t)0x00040000);
         static const uint32_t TIM9_RCC = ((uint32_t)0x00080000);
-        static const uint32_t TIM10_RCC = ((uint32_t)0x00100000);
-        static const uint32_t TIM11_RCC = ((uint32_t)0x00200000);
+        static const uint32_t Timer_10_RCC = ((uint32_t)0x00100000);
+        static const uint32_t Timer_11_RCC = ((uint32_t)0x00200000);
     } port_to_open;
     class Open
     {
@@ -298,13 +297,117 @@ public:
         {
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
         }
-
     } close;
-} clocks;
+    // Timer1为总线2(高级)
+    // Timer2/3/4为总线1(通用)
+    // GPIO a~g 中断为总线2
+} static clocks;
 
 namespace Device
 {
     // 默认低电平
+    class Timer
+    {
+        class TimerType
+        {
+            class Universal
+            {
+            public:
+                static const uint8_t timer_2 = 0;
+                static const uint8_t timer_3 = 1;                              
+                static const uint8_t timer_4 = 2;
+            } static const universal;
+        } static const timerType;
+
+    public:
+        class Universal_timer
+        {
+            // 中断优先级配置
+            // #define BASIC_TIM TIM4
+            // #define BASIC_TIM_APBxClock_FUN RCC_APB1PeriphClockCmd
+            // #define BASIC_TIM_CLK RCC_APB1Periph_TIM4
+            // #define BASIC_TIM_Period (1000 - 1)
+            // #define BASIC_TIM_Prescaler 71
+            // #define BASIC_TIM_IRQ TIM4_IRQn // 中断来源
+            // #define BASIC_TIM_IRQHandler TIM6_IRQHandler
+        private:
+            uint8_t index;
+            TIM_TypeDef *BASIC_TIM;
+
+        public:
+            Universal_timer(uint8_t timerType,uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index)) 
+            {
+                NVIC_Config();
+                TIM_Config(times);
+            };
+            void NVIC_Config()
+            {
+                NVIC_InitTypeDef NVIC_InitStructure;
+                // 设置中断组为0
+                NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+                // 设置中断来源
+                // IRQn_Type;
+                NVIC_InitStructure.NVIC_IRQChannel = index + 28;
+                // 设置主优先级为 0
+                NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+                // 设置抢占优先级为3
+                NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
+                NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+                NVIC_Init(&NVIC_InitStructure);
+            }
+
+            void TIM_Config(uint16_t limits)
+            {
+
+                uint16_t BASIC_TIM_Prescaler = 71;
+                TIM_TypeDef *timer = 0;
+
+                TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+
+                // 开启定时器时钟,即内部时钟CK_INT=72M
+                RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (index), ENABLE);
+                // RCC_APB1Periph_TIM4;
+                // 自动重装载寄存器的值，累计TIM_Period+1个频率后产生一个更新或者中断
+                // uint16_t limits = 1000 - 1;
+                TIM_TimeBaseStructure.TIM_Period = limits;
+                // 时钟预分频数为
+                TIM_TimeBaseStructure.TIM_Prescaler = BASIC_TIM_Prescaler;
+
+                // 时钟分频因子 ，基本定时器没有，不用管
+                TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+
+                // 计数器计数模式，基本定时器只能向上计数，没有计数模式的设置
+                TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+
+                // 重复计数器的值，基本定时器没有，不用管
+                TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+
+                // 初始化定时器
+                TIM_TimeBaseInit(BASIC_TIM, &TIM_TimeBaseStructure);
+
+                // 清除计数器中断标志位
+                TIM_ClearFlag(BASIC_TIM, TIM_FLAG_Update);
+
+                // 开启计数器中断：计数器溢出、产生更新事件、计数器的更新事件能够产生中断、并被使能
+                TIM_ITConfig(BASIC_TIM, TIM_IT_Update, ENABLE);
+
+                // 使能计数器
+                TIM_Cmd(BASIC_TIM, ENABLE);
+            }
+
+            void BASIC_TIM_Init(void)
+            {
+                NVIC_Config();
+                TIM_Config(6);
+            }
+
+        };
+        class Advanced_timer
+        {
+
+        };
+
+    };
     class LED
     {
         GPIO_TypeDef *port;

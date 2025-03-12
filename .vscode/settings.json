@@ -17,7 +17,8 @@
     "files.associations": {
         "*.s": "plaintext",
         "stm32f10x.h": "c",
-        "vector": "cpp"
+        "vector": "cpp",
+        "variant": "cpp"
     },
     "C_Cpp.default.compilerPath": "C:/work/mingw64/bin/g++.exe"
 }
