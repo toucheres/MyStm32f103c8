@@ -302,22 +302,29 @@ public:
     // Timer2/3/4为总线1(通用)
     // GPIO a~g 中断为总线2
 } static clocks;
-
+extern "C" void TIM2_IRQHandler(void);
 namespace Device
 {
     // 默认低电平
     class Timer
     {
+        friend class Advanced_timer;
+        friend class Universal_timer;
+    public:
+        static void (*fun[4])(void);
+
+    public:
         class TimerType
         {
+        public:
             class Universal
             {
             public:
                 static const uint8_t timer_2 = 0;
-                static const uint8_t timer_3 = 1;                              
+                static const uint8_t timer_3 = 1;
                 static const uint8_t timer_4 = 2;
-            } static const universal;
-        } static const timerType;
+            };
+        };
 
     public:
         class Universal_timer
@@ -335,7 +342,11 @@ namespace Device
             TIM_TypeDef *BASIC_TIM;
 
         public:
-            Universal_timer(uint8_t timerType,uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index)) 
+            void setCallback(void (*func)(void))
+            {
+                Timer::fun[this->index]();
+            }
+            Universal_timer(uint8_t timerType, uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index))
             {
                 NVIC_Config();
                 TIM_Config(times);
@@ -400,14 +411,13 @@ namespace Device
                 NVIC_Config();
                 TIM_Config(6);
             }
-
         };
         class Advanced_timer
         {
-
         };
-
     };
+    // 在命名空间外部定义静态成员
+    void (*Device::Timer::fun[4])(void) = {nullptr, nullptr, nullptr, nullptr};
     class LED
     {
         GPIO_TypeDef *port;
@@ -435,3 +445,12 @@ namespace Device
         }
     };
 };
+extern "C" void TIM2_IRQHandler(void)
+{
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) // 检查指定的TIM中断发生与否:TIM 中断源
+    {
+        // do something;
+        Device::Timer::fun[0]();
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
+    }
+}

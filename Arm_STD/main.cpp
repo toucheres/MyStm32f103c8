@@ -12,8 +12,17 @@ void Delay(uint32_t count)
 
 class MyDevice
 {
-    Device::LED led{Port::PortA, Pin::Pin0};
+    static Device::LED led;
+    static Device::Timer::Universal_timer timer;
+
 public:
+    static void test() {
+        MyDevice::led.turn();
+    };
+    MyDevice()
+    {
+        this->timer.setCallback(test);
+    }
     void exec()
     {
         
@@ -24,6 +33,8 @@ public:
         
     }
 };
+Device::LED MyDevice::led{Port::PortA, Pin::Pin0};
+Device::Timer::Universal_timer MyDevice::timer{Device::Timer::TimerType::Universal::timer_2, 100};
 int main(void)
 {
     MyDevice self;
