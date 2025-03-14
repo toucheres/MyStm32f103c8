@@ -10,22 +10,26 @@ void Delay(uint32_t count)
     }
 }
 
-class MyDevice
+Device::LED led{Port::PortA, Pin::Pin0};
+Device::Timer::Universal_timer timer1{Device::Timer::Universal_timer::TimerType::timer_2,1000};
+timer2_fun
 {
-    Device::LED led{Port::PortA, Pin::Pin0};
-public:
-    void exec()
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) // 检查指定的TIM中断发生与否:TIM 中断源
     {
-        
-        while (1)
-        {
-            /* code */
-        }
-        
+        // do something;
+        led.turn();
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
     }
-};
+}
 int main(void)
 {
-    MyDevice self;
-    self.exec();
+    while (1)
+    {
+        uint16_t tp = 0;
+        while (tp>100000)
+        {
+            uint16_t i;
+        }
+        
+    }  
 }

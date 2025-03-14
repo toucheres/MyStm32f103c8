@@ -1,4 +1,5 @@
 #include "stm32f10x.h"
+#define timer2_fun extern "C" void TIM2_IRQHandler(void)
 // #include <vector>
 class Port
 {
@@ -305,23 +306,19 @@ public:
 
 namespace Device
 {
-    // 默认低电平
     class Timer
     {
-        class TimerType
-        {
-            class Universal
-            {
-            public:
-                static const uint8_t timer_2 = 0;
-                static const uint8_t timer_3 = 1;                              
-                static const uint8_t timer_4 = 2;
-            } static const universal;
-        } static const timerType;
-
     public:
         class Universal_timer
         {
+        public:
+            class TimerType
+            {
+            public:
+                static const uint8_t timer_2 = 0;
+                static const uint8_t timer_3 = 1;
+                static const uint8_t timer_4 = 2;
+            };
             // 中断优先级配置
             // #define BASIC_TIM TIM4
             // #define BASIC_TIM_APBxClock_FUN RCC_APB1PeriphClockCmd
@@ -335,7 +332,7 @@ namespace Device
             TIM_TypeDef *BASIC_TIM;
 
         public:
-            Universal_timer(uint8_t timerType,uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index)) 
+            Universal_timer(uint8_t timerType, uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index))
             {
                 NVIC_Config();
                 TIM_Config(times);
@@ -356,30 +353,71 @@ namespace Device
                 NVIC_Init(&NVIC_InitStructure);
             }
 
-            void TIM_Config(uint16_t limits)
-            {
+            // void TIM_Config(uint16_t ms_time)
+            // {
+            //     // 预分频器设为71，使得计数频率为72M/(71+1)=1MHz ，即计数一次
+            //     // 1MHz = 10**6Hz
+            //     uint16_t BASIC_TIM_Prescaler = 72*10-1;
 
-                uint16_t BASIC_TIM_Prescaler = 71;
-                TIM_TypeDef *timer = 0;
+            //     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+
+            //     // 开启定时器时钟,即内部时钟CK_INT=72M
+            //     RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (index), ENABLE);
+
+            //     // 将毫秒转换为微秒，作为周期值
+            //     // 例如：10ms = 10 * 1000us = 10000us，对应Period=9999
+            //     TIM_TimeBaseStructure.TIM_Period = (ms_time*100) - 1;
+
+            //     // 时钟预分频数
+            //     TIM_TimeBaseStructure.TIM_Prescaler = BASIC_TIM_Prescaler;
+
+            //     // 时钟分频因子，基本定时器没有，不用管
+            //     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+
+            //     // 计数器计数模式，基本定时器只能向上计数，没有计数模式的设置
+            //     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+
+            //     // 重复计数器的值，基本定时器没有，不用管
+            //     TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+
+            //     // 初始化定时器
+            //     TIM_TimeBaseInit(BASIC_TIM, &TIM_TimeBaseStructure);
+
+            //     // 清除计数器中断标志位
+            //     TIM_ClearFlag(BASIC_TIM, TIM_FLAG_Update);
+
+            //     // 开启计数器中断
+            //     TIM_ITConfig(BASIC_TIM, TIM_IT_Update, ENABLE);
+
+            //     // 使能计数器
+            //     TIM_Cmd(BASIC_TIM, ENABLE);
+            // }
+            void TIM_Config(uint16_t ms_time)
+            {
+                // 两级分频方式来实现毫秒级定时
+                // 第一级：72MHz / (71+1) = 1MHz（每微秒计数一次）
+                uint16_t BASIC_TIM_Prescaler = 72*100 - 1;
 
                 TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
-                // 开启定时器时钟,即内部时钟CK_INT=72M
+                // 开启定时器时钟
                 RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (index), ENABLE);
-                // RCC_APB1Periph_TIM4;
-                // 自动重装载寄存器的值，累计TIM_Period+1个频率后产生一个更新或者中断
-                // uint16_t limits = 1000 - 1;
-                TIM_TimeBaseStructure.TIM_Period = limits;
-                // 时钟预分频数为
+
+                // 第二级：使用 Period 值设置中断周期
+                // 例如设置 ms_time=500，则 Period=500-1=499
+                // 表示500ms触发一次中断
+                TIM_TimeBaseStructure.TIM_Period = ms_time*10 - 1;
+
+                // 预分频值（72分频得到1MHz计数频率）
                 TIM_TimeBaseStructure.TIM_Prescaler = BASIC_TIM_Prescaler;
 
-                // 时钟分频因子 ，基本定时器没有，不用管
+                // 时钟分频因子
                 TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 
-                // 计数器计数模式，基本定时器只能向上计数，没有计数模式的设置
+                // 向上计数模式
                 TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 
-                // 重复计数器的值，基本定时器没有，不用管
+                // 不使用重复计数
                 TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
 
                 // 初始化定时器
@@ -388,25 +426,21 @@ namespace Device
                 // 清除计数器中断标志位
                 TIM_ClearFlag(BASIC_TIM, TIM_FLAG_Update);
 
-                // 开启计数器中断：计数器溢出、产生更新事件、计数器的更新事件能够产生中断、并被使能
+                // 开启计数器中断
                 TIM_ITConfig(BASIC_TIM, TIM_IT_Update, ENABLE);
 
                 // 使能计数器
                 TIM_Cmd(BASIC_TIM, ENABLE);
             }
-
             void BASIC_TIM_Init(void)
             {
                 NVIC_Config();
                 TIM_Config(6);
             }
-
         };
         class Advanced_timer
         {
-
         };
-
     };
     class LED
     {
