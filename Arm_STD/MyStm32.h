@@ -1,4 +1,9 @@
 #include "stm32f10x.h"
+extern "C"
+{
+#include "Delay.h"
+#include "OLED.h"
+}
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
 #define timer3_fun extern "C" void TIM3_IRQHandler(void)
 #define timer4_fun extern "C" void TIM4_IRQHandler(void)

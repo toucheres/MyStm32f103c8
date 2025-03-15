@@ -5,6 +5,9 @@ project:
     - group: Source Files
       files:
         - file: ./main.cpp
+        - file: OLED.c
+        - file: OLED_Data.c
+        - file: Delay.c
         # - file: ./MyStm32.cpp
 
         # List components to use for your application.
