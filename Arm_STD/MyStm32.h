@@ -6,21 +6,21 @@
 class Port
 {
 public:
-  static GPIO_TypeDef *const PortA;
-  static GPIO_TypeDef *const PortB;
-  static GPIO_TypeDef *const PortC;
-  static GPIO_TypeDef *const PortD;
-  static GPIO_TypeDef *const PortE;
-  static GPIO_TypeDef *const PortF;
-  static GPIO_TypeDef *const PortG;
+  static GPIO_TypeDef *const A;
+  static GPIO_TypeDef *const B;
+  static GPIO_TypeDef *const C;
+  static GPIO_TypeDef *const D;
+  static GPIO_TypeDef *const E;
+  static GPIO_TypeDef *const F;
+  static GPIO_TypeDef *const G;
 };
-inline GPIO_TypeDef *const Port::PortA = GPIOA;
-inline GPIO_TypeDef *const Port::PortB = GPIOB;
-inline GPIO_TypeDef *const Port::PortC = GPIOC;
-inline GPIO_TypeDef *const Port::PortD = GPIOD;
-inline GPIO_TypeDef *const Port::PortE = GPIOE;
-inline GPIO_TypeDef *const Port::PortF = GPIOF;
-inline GPIO_TypeDef *const Port::PortG = GPIOG;
+inline GPIO_TypeDef *const Port::A = GPIOA;
+inline GPIO_TypeDef *const Port::B = GPIOB;
+inline GPIO_TypeDef *const Port::C = GPIOC;
+inline GPIO_TypeDef *const Port::D = GPIOD;
+inline GPIO_TypeDef *const Port::E = GPIOE;
+inline GPIO_TypeDef *const Port::F = GPIOF;
+inline GPIO_TypeDef *const Port::G = GPIOG;
 class Pin
 {
 public:
@@ -70,13 +70,13 @@ public:
   static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin)
   {
     int index = 0;
-    if (_port == Port::PortA)
+    if (_port == Port::A)
       index = 0;
-    else if (_port == Port::PortB)
+    else if (_port == Port::B)
       index = 1;
-    else if (_port == Port::PortC)
+    else if (_port == Port::C)
       index = 2;
-    else if (_port == Port::PortD)
+    else if (_port == Port::D)
       index = 3;
     if (used[index] & _pin)
     {
@@ -174,12 +174,12 @@ public:
         doInitPin(port, GPIO_Pin_15, mode);
       }
     };
-    Port_Init ProtA{Port::PortA};
-    Port_Init ProtB{Port::PortB};
-    Port_Init ProtC{Port::PortC};
-    Port_Init ProtD{Port::PortD};
-    Port_Init ProtE{Port::PortE};
-    Port_Init ProtF{Port::PortF};
+    Port_Init ProtA{Port::A};
+    Port_Init ProtB{Port::B};
+    Port_Init ProtC{Port::C};
+    Port_Init ProtD{Port::D};
+    Port_Init ProtE{Port::E};
+    Port_Init ProtF{Port::F};
   } static init;
 
   class
@@ -262,12 +262,12 @@ public:
         doWritePin(port, GPIO_Pin_15, value != 0 ? Bit_SET : Bit_RESET);
       }
     };
-    Port_Write ProtA{Port::PortA};
-    Port_Write ProtB{Port::PortB};
-    Port_Write ProtC{Port::PortC};
-    Port_Write ProtD{Port::PortD};
-    Port_Write ProtE{Port::PortE};
-    Port_Write ProtF{Port::PortF};
+    Port_Write ProtA{Port::A};
+    Port_Write ProtB{Port::B};
+    Port_Write ProtC{Port::C};
+    Port_Write ProtD{Port::D};
+    Port_Write ProtE{Port::E};
+    Port_Write ProtF{Port::F};
   } static write;
 
   class
@@ -301,12 +301,12 @@ public:
       void Pin14(uint8_t value) const { doReadPin(port, GPIO_Pin_14); }
       void Pin15(uint8_t value) const { doReadPin(port, GPIO_Pin_15); }
     };
-    Port_read ProtA{Port::PortA};
-    Port_read ProtB{Port::PortA};
-    Port_read ProtC{Port::PortA};
-    Port_read ProtD{Port::PortA};
-    Port_read ProtE{Port::PortA};
-    Port_read ProtF{Port::PortA};
+    Port_read ProtA{Port::A};
+    Port_read ProtB{Port::A};
+    Port_read ProtC{Port::A};
+    Port_read ProtD{Port::A};
+    Port_read ProtE{Port::A};
+    Port_read ProtF{Port::A};
   } static read;
 
   static uint16_t read_port(GPIO_TypeDef *port)
@@ -379,6 +379,14 @@ public:
     {
       RCC_AHBPeriphClockCmd(AHBPe_RCCriph, ENABLE);
     }
+    static void port(GPIO_TypeDef *port) {
+      // GPIOA_BASE = APB2PERIPH_BASE + 0x0800;
+      uint32_t portAddr = reinterpret_cast<uint32_t>(port);
+      uint32_t offset = portAddr - APB2PERIPH_BASE;
+      uint8_t index = offset / 0x0400;
+      // 根据偏移量启用相应的时钟
+      RCC_APB2PeriphClockCmd(1 << index, ENABLE);
+    }
   } open;
   class Close
   {
@@ -394,6 +402,15 @@ public:
     static void AHBPeriph(uint32_t RCC_AHBPeriph)
     {
       RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
+    }
+    static void port(GPIO_TypeDef *port)
+    {
+      // GPIOA_BASE = APB2PERIPH_BASE + 0x0800;
+      uint32_t portAddr = reinterpret_cast<uint32_t>(port);
+      uint32_t offset = portAddr - APB2PERIPH_BASE;
+      uint8_t index = offset / 0x0400;
+      // 根据偏移量启用相应的时钟
+      RCC_APB2PeriphClockCmd(1 << index, DISABLE);
     }
   } close;
   // Timer1为总线2(高级)
@@ -576,7 +593,7 @@ namespace Device
     {
       if (io.sign(_port, _pin))
       {
-        clocks.open.APB2Periph(clocks.port_to_open.GPIOA_RCC);
+        clocks.open.port(Port::A);
         GPIO_InitTypeDef GPIO_InitStructure;
         GPIO_InitStructure.GPIO_Pin = pin;
         GPIO_InitStructure.GPIO_Mode = mode;

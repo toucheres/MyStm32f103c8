@@ -10,7 +10,7 @@ void Delay(uint32_t count)
     }
 }
 
-Device::LED led{Port::PortA, Pin::Pin0};
+Device::LED led{Port::A, Pin::Pin0};
 Device::Timer::Universal_timer timer1{Device::Timer::Universal_timer::TimerType::timer_4,1000_ms};
 timer4_fun
 {
