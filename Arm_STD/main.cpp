@@ -11,14 +11,14 @@ void Delay(uint32_t count)
 }
 
 Device::LED led{Port::PortA, Pin::Pin0};
-Device::Timer::Universal_timer timer1{Device::Timer::Universal_timer::TimerType::timer_2,1000};
-timer2_fun
+Device::Timer::Universal_timer timer1{Device::Timer::Universal_timer::TimerType::timer_4,1000_ms};
+timer4_fun
 {
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) // 检查指定的TIM中断发生与否:TIM 中断源
+    if (TIM_GetITStatus(TIM4, TIM_IT_Update) == SET) // 检查指定的TIM中断发生与否:TIM 中断源
     {
         // do something;
         led.turn();
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
+        TIM_ClearITPendingBit(TIM4, TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
     }
 }
 int main(void)
@@ -26,9 +26,8 @@ int main(void)
     while (1)
     {
         uint16_t tp = 0;
-        while (tp>100000)
-        {
-            uint16_t i;
+        for (tp=0; tp<100; tp++) {
+        
         }
         
     }  

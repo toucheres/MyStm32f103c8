@@ -20,5 +20,5 @@
         "vector": "cpp",
         "variant": "cpp"
     },
-    "C_Cpp.default.compilerPath": "C:/work/mingw64/bin/g++.exe"
+    "C_Cpp.default.compilerPath": "c:/Users/asus/.vcpkg/artifacts/2139c4c6/compilers.arm.armclang/6.23.0/bin/armclang.exe"
 }
