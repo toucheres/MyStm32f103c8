@@ -1,4 +1,5 @@
 #include "stm32f10x.h"
+#include <stdarg.h>
 extern "C"
 {
 #include "Delay.h"
@@ -608,5 +609,161 @@ namespace Device
       }
     }
     void turn() { io.Change_pin(this->port, this->pin); }
+  };
+  class OLED
+  {
+  private:
+    // 封装的字体大小常量
+    enum FontSize
+    {
+      FONT_6X8 = 6, // 对应OLED_6X8
+      FONT_8X16 = 8 // 对应OLED_8X16
+    };
+
+    // 填充模式
+    enum FillMode
+    {
+      UNFILLED = 0,
+      FILLED = 1
+    };
+
+  public:
+    // 构造函数 - 初始化OLED
+    OLED()
+    {
+      OLED_Init();
+    }
+
+    // 更新函数
+    void Update()
+    {
+      OLED_Update();
+    }
+
+    void UpdateArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+    {
+      OLED_UpdateArea(x, y, width, height);
+    }
+
+    // 显存控制函数
+    void Clear()
+    {
+      OLED_Clear();
+    }
+
+    void ClearArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+    {
+      OLED_ClearArea(x, y, width, height);
+    }
+
+    void Reverse()
+    {
+      OLED_Reverse();
+    }
+
+    void ReverseArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+    {
+      OLED_ReverseArea(x, y, width, height);
+    }
+
+    // 显示函数
+    void ShowChar(int16_t x, int16_t y, char ch, uint8_t fontSize)
+    {
+      OLED_ShowChar(x, y, ch, fontSize);
+    }
+
+    void ShowString(int16_t x, int16_t y, const char *str, uint8_t fontSize)
+    {
+      // 注意：使用const修饰字符串参数，避免C++11警告
+      OLED_ShowString(x, y, const_cast<char *>(str), fontSize);
+    }
+
+    void ShowNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+    {
+      OLED_ShowNum(x, y, number, length, fontSize);
+    }
+
+    void ShowSignedNum(int16_t x, int16_t y, int32_t number, uint8_t length, uint8_t fontSize)
+    {
+      OLED_ShowSignedNum(x, y, number, length, fontSize);
+    }
+
+    void ShowHexNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+    {
+      OLED_ShowHexNum(x, y, number, length, fontSize);
+    }
+
+    void ShowBinNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+    {
+      OLED_ShowBinNum(x, y, number, length, fontSize);
+    }
+
+    void ShowFloatNum(int16_t x, int16_t y, double number, uint8_t intLength,
+                      uint8_t fraLength, uint8_t fontSize)
+    {
+      OLED_ShowFloatNum(x, y, number, intLength, fraLength, fontSize);
+    }
+
+    void ShowImage(int16_t x, int16_t y, uint8_t width, uint8_t height, const uint8_t *image)
+    {
+      OLED_ShowImage(x, y, width, height, image);
+    }
+
+    void Printf(int16_t x, int16_t y, uint8_t fontSize, const char *format, ...)
+    {
+      va_list args;
+      va_start(args, format);
+      // 因为va_list不能直接传递，需要创建一个包装函数或在此处展开实现
+      // 这里简化处理，只传递格式和参数列表给原始函数
+      OLED_Printf(x, y, fontSize, const_cast<char *>(format), args);
+      va_end(args);
+    }
+
+    // 绘图函数
+    void DrawPoint(int16_t x, int16_t y)
+    {
+      OLED_DrawPoint(x, y);
+    }
+
+    bool GetPoint(int16_t x, int16_t y)
+    {
+      return OLED_GetPoint(x, y) != 0;
+    }
+
+    void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
+    {
+      OLED_DrawLine(x0, y0, x1, y1);
+    }
+
+    void DrawRectangle(int16_t x, int16_t y, uint8_t width, uint8_t height, bool filled = false)
+    {
+      OLED_DrawRectangle(x, y, width, height, filled ? FILLED : UNFILLED);
+    }
+
+    void DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                      int16_t x2, int16_t y2, bool filled = false)
+    {
+      OLED_DrawTriangle(x0, y0, x1, y1, x2, y2, filled ? FILLED : UNFILLED);
+    }
+
+    void DrawCircle(int16_t x, int16_t y, uint8_t radius, bool filled = false)
+    {
+      OLED_DrawCircle(x, y, radius, filled ? FILLED : UNFILLED);
+    }
+
+    void DrawEllipse(int16_t x, int16_t y, uint8_t a, uint8_t b, bool filled = false)
+    {
+      OLED_DrawEllipse(x, y, a, b, filled ? FILLED : UNFILLED);
+    }
+
+    void DrawArc(int16_t x, int16_t y, uint8_t radius,
+                 int16_t startAngle, int16_t endAngle, bool filled = false)
+    {
+      OLED_DrawArc(x, y, radius, startAngle, endAngle, filled ? FILLED : UNFILLED);
+    }
+
+    // 常量定义 - 与OLED.h中的宏定义保持一致
+    static constexpr uint8_t FONT_SIZE_6X8 = OLED_6X8;
+    static constexpr uint8_t FONT_SIZE_8X16 = OLED_8X16;
   };
 }; // namespace Device
