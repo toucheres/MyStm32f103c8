@@ -1,3 +1,5 @@
+#include "RTE_Components.h"
+#include CMSIS_device_header
 #include "MyStm32.h"
 int main(void)
 {
