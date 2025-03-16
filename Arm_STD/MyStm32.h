@@ -692,10 +692,10 @@ namespace Device
          * 随后调用Update函数或UpdateArea函数
          * 才会将显存数组的数据发送到OLED硬件，进行显示
          */
-        GPIO_TypeDef *SCL_port = GPIOB;
-        uint16_t SCL_pin = GPIO_Pin_8;
-        GPIO_TypeDef *SDA_port = GPIOB;
-        uint16_t SDA_pin = GPIO_Pin_9;
+        GPIO_TypeDef *SCL_port;
+        uint16_t SCL_pin;
+        GPIO_TypeDef *SDA_port;
+        uint16_t SDA_pin;
         uint8_t DisplayBuf[8][128];
 
         /*********************全局变量*/
@@ -710,6 +710,13 @@ namespace Device
          *           用户需要根据参数传入的值，将SCL置为高电平或者低电平
          *           当参数传入0时，置SCL为低电平，当参数传入1时，置SCL为高电平
          */
+
+        OLED(GPIO_TypeDef *_SCL_port = GPIOB, uint16_t _SCL_pin = GPIO_Pin_8,
+             GPIO_TypeDef *_SDA_port = GPIOB, uint16_t _SDA_pin = GPIO_Pin_9)
+            : SCL_port(_SCL_port), SCL_pin(_SCL_pin), SDA_port(_SDA_port), SDA_pin(_SDA_pin)
+        {
+        }
+
         void W_SCL(uint8_t BitValue)
         {
             /*根据BitValue的值，将SCL置高电平或者低电平*/
@@ -750,7 +757,7 @@ namespace Device
             //  (GPIOB)APB2PERIPH_BASE + 0x0C00 RCC_APB2Periph_GPIOB((uint32_t)0x00000008)
             return 1 << (reinterpret_cast<uint32_t>(GPIOX) - APB2PERIPH_BASE) / (0x0400);
         }
-        void GPIO_Init(void)
+        void OLED_GPIO_Init(void)
         {
             uint32_t i, j;
 
@@ -877,7 +884,7 @@ namespace Device
          */
         void Init(void)
         {
-            GPIO_Init(); // 先调用底层的端口初始化
+            OLED_GPIO_Init(); // 先调用底层的端口初始化
 
             /*写入一系列的命令，对OLED进行初始化配置*/
             WriteCommand(0xAE); // 设置显示开启/关闭，0xAE关闭，0xAF开启
@@ -1186,15 +1193,15 @@ namespace Device
          */
         void ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize)
         {
-            if (FontSize == 8X16) // 字体为宽8像素，高16像素
+            if (FontSize == OLED_8X16) // 字体为宽8像素，高16像素
             {
                 /*将ASCII字模库F8x16的指定数据以8*16的图像格式显示*/
-                ShowImage(X, Y, 8, 16, F8x16[Char - ' ']);
+                ShowImage(X, Y, 8, 16, OLED_F8x16[Char - ' ']);
             }
-            else if (FontSize == 6X8) // 字体为宽6像素，高8像素
+            else if (FontSize == OLED_6X8) // 字体为宽6像素，高8像素
             {
                 /*将ASCII字模库F6x8的指定数据以6*8的图像格式显示*/
-                ShowImage(X, Y, 6, 8, F6x8[Char - ' ']);
+                ShowImage(X, Y, 6, 8, OLED_F6x8[Char - ' ']);
             }
         }
 
@@ -1321,25 +1328,25 @@ namespace Device
                 {
                     /*遍历整个字模库，从字模库中寻找此字符的数据*/
                     /*如果找到最后一个字符（定义为空字符串），则表示字符未在字模库定义，停止寻找*/
-                    for (pIndex = 0; strcmp(CF16x16[pIndex].Index, "") != 0; pIndex++)
+                    for (pIndex = 0; strcmp(OLED_CF16x16[pIndex].Index, "") != 0; pIndex++)
                     {
                         /*找到匹配的字符*/
-                        if (strcmp(CF16x16[pIndex].Index, SingleChar) == 0)
+                        if (strcmp(OLED_CF16x16[pIndex].Index, SingleChar) == 0)
                         {
                             break; // 跳出循环，此时pIndex的值为指定字符的索引
                         }
                     }
-                    if (FontSize == 8X16) // 给定字体为8*16点阵
+                    if (FontSize == OLED_8X16) // 给定字体为8*16点阵
                     {
                         /*将字模库CF16x16的指定数据以16*16的图像格式显示*/
-                        ShowImage(X + XOffset, Y, 16, 16, CF16x16[pIndex].Data);
+                        ShowImage(X + XOffset, Y, 16, 16, OLED_CF16x16[pIndex].Data);
                         XOffset += 16;
                     }
-                    else if (FontSize == 6X8) // 给定字体为6*8点阵
+                    else if (FontSize == OLED_6X8) // 给定字体为6*8点阵
                     {
                         /*空间不足，此位置显示'?'*/
-                        ShowChar(X + XOffset, Y, '?', 6X8);
-                        XOffset += 6X8;
+                        ShowChar(X + XOffset, Y, '?', OLED_6X8);
+                        XOffset += OLED_6X8;
                     }
                 }
             }
@@ -2238,5 +2245,160 @@ namespace Device
 
     /*****************江协科技|版权所有****************/
     /*****************jiangxiekeji.com*****************/
+    class OLED_
+    {
+    private:
+        // 封装的字体大小常量
+        enum FontSize
+        {
+            FONT_6X8 = 6, // 对应OLED_6X8
+            FONT_8X16 = 8 // 对应OLED_8X16
+        };
 
+        // 填充模式
+        enum FillMode
+        {
+            UNFILLED = 0,
+            FILLED = 1
+        };
+
+    public:
+        // 构造函数 - 初始化OLED
+        OLED_()
+        {
+            OLED_Init();
+        }
+
+        // 更新函数
+        void Update()
+        {
+            OLED_Update();
+        }
+
+        void UpdateArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+        {
+            OLED_UpdateArea(x, y, width, height);
+        }
+
+        // 显存控制函数
+        void Clear()
+        {
+            OLED_Clear();
+        }
+
+        void ClearArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+        {
+            OLED_ClearArea(x, y, width, height);
+        }
+
+        void Reverse()
+        {
+            OLED_Reverse();
+        }
+
+        void ReverseArea(int16_t x, int16_t y, uint8_t width, uint8_t height)
+        {
+            OLED_ReverseArea(x, y, width, height);
+        }
+
+        // 显示函数
+        void ShowChar(int16_t x, int16_t y, char ch, uint8_t fontSize)
+        {
+            OLED_ShowChar(x, y, ch, fontSize);
+        }
+
+        void ShowString(int16_t x, int16_t y, const char *str, uint8_t fontSize)
+        {
+            // 注意：使用const修饰字符串参数，避免C++11警告
+            OLED_ShowString(x, y, const_cast<char *>(str), fontSize);
+        }
+
+        void ShowNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+        {
+            OLED_ShowNum(x, y, number, length, fontSize);
+        }
+
+        void ShowSignedNum(int16_t x, int16_t y, int32_t number, uint8_t length, uint8_t fontSize)
+        {
+            OLED_ShowSignedNum(x, y, number, length, fontSize);
+        }
+
+        void ShowHexNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+        {
+            OLED_ShowHexNum(x, y, number, length, fontSize);
+        }
+
+        void ShowBinNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize)
+        {
+            OLED_ShowBinNum(x, y, number, length, fontSize);
+        }
+
+        void ShowFloatNum(int16_t x, int16_t y, double number, uint8_t intLength,
+                          uint8_t fraLength, uint8_t fontSize)
+        {
+            OLED_ShowFloatNum(x, y, number, intLength, fraLength, fontSize);
+        }
+
+        void ShowImage(int16_t x, int16_t y, uint8_t width, uint8_t height, const uint8_t *image)
+        {
+            OLED_ShowImage(x, y, width, height, image);
+        }
+
+        void Printf(int16_t x, int16_t y, uint8_t fontSize, const char *format, ...)
+        {
+            va_list args;
+            va_start(args, format);
+            // 因为va_list不能直接传递，需要创建一个包装函数或在此处展开实现
+            // 这里简化处理，只传递格式和参数列表给原始函数
+            OLED_Printf(x, y, fontSize, const_cast<char *>(format), args);
+            va_end(args);
+        }
+
+        // 绘图函数
+        void DrawPoint(int16_t x, int16_t y)
+        {
+            OLED_DrawPoint(x, y);
+        }
+
+        bool GetPoint(int16_t x, int16_t y)
+        {
+            return OLED_GetPoint(x, y) != 0;
+        }
+
+        void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
+        {
+            OLED_DrawLine(x0, y0, x1, y1);
+        }
+
+        void DrawRectangle(int16_t x, int16_t y, uint8_t width, uint8_t height, bool filled = false)
+        {
+            OLED_DrawRectangle(x, y, width, height, filled ? FILLED : UNFILLED);
+        }
+
+        void DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                          int16_t x2, int16_t y2, bool filled = false)
+        {
+            OLED_DrawTriangle(x0, y0, x1, y1, x2, y2, filled ? FILLED : UNFILLED);
+        }
+
+        void DrawCircle(int16_t x, int16_t y, uint8_t radius, bool filled = false)
+        {
+            OLED_DrawCircle(x, y, radius, filled ? FILLED : UNFILLED);
+        }
+
+        void DrawEllipse(int16_t x, int16_t y, uint8_t a, uint8_t b, bool filled = false)
+        {
+            OLED_DrawEllipse(x, y, a, b, filled ? FILLED : UNFILLED);
+        }
+
+        void DrawArc(int16_t x, int16_t y, uint8_t radius,
+                     int16_t startAngle, int16_t endAngle, bool filled = false)
+        {
+            OLED_DrawArc(x, y, radius, startAngle, endAngle, filled ? FILLED : UNFILLED);
+        }
+
+        // 常量定义 - 与OLED.h中的宏定义保持一致
+        static constexpr uint8_t FONT_SIZE_6X8 = OLED_6X8;
+        static constexpr uint8_t FONT_SIZE_8X16 = OLED_8X16;
+    };
 }; // namespace Device

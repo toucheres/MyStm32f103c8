@@ -29,7 +29,7 @@ int main(void)
 
     // 显示文本
     oled.ShowChar(0, 0, 'A', OLED_6X8);
-    oled.ShowString(16, 0, "你好!", OLED_8X16);
+    oled.ShowString(16, 0, "test", OLED_8X16);
 
     // 显示数字
     oled.ShowNum(0, 28, 12345, 5, OLED_6X8);
