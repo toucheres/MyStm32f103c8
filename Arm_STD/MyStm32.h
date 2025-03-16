@@ -1231,7 +1231,7 @@ namespace Device
             while (String[i] != '\0') // 遍历字符串
             {
 
-#ifdef CHARSET_UTF8 // 定义字符集为UTF8
+#ifdef OLED_CHARSET_UTF8 // 定义字符集为UTF8
                 /*此段代码的目的是，提取UTF8字符串中的一个字符，转存到SingleChar子字符串中*/
                 /*判断UTF8编码第一个字节的标志位*/
                 if ((String[i] & 0x80) == 0x00) // 第一个字节为0xxxxxxx
@@ -1295,7 +1295,7 @@ namespace Device
                 }
 #endif
 
-#ifdef CHARSET_GB2312 // 定义字符集为GB2312
+#ifdef OLED_CHARSET_GB2312 // 定义字符集为GB2312
                 /*此段代码的目的是，提取GB2312字符串中的一个字符，转存到SingleChar子字符串中*/
                 /*判断GB2312字节的最高位标志位*/
                 if ((String[i] & 0x80) == 0x00) // 最高位为0

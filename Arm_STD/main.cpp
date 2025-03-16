@@ -24,7 +24,7 @@ int main(void)
     SystemInit();
 
     // 创建并初始化OLED对象
-
+    oled.Init();
     oled.Clear();
 
     // 显示文本
