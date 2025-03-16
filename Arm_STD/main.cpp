@@ -28,15 +28,15 @@ int main(void)
     oled.Clear();
 
     // 显示文本
-    oled.ShowChar(0, 0, 'A', FONT_SIZE_8X16);
-    oled.ShowString(16, 0, "你好!", Device::OLED::FONT_SIZE_8X16);
+    oled.ShowChar(0, 0, 'A', OLED_6X8);
+    oled.ShowString(16, 0, "你好!", OLED_8X16);
 
     // 显示数字
-    oled.ShowNum(0, 28, 12345, 5, Device::OLED::FONT_SIZE_6X8);
+    oled.ShowNum(0, 28, 12345, 5, OLED_6X8);
 
     // 绘制图形
     oled.DrawRectangle(70, 40, 30, 15, true); // 填充矩形
-    oled.DrawCircle(40, 40, 10);              // 空心圆    // 更新显示
+    oled.DrawCircle(40, 40, 10, 0);              // 空心圆    // 更新显示
     oled.Update();
 
     while (1)
