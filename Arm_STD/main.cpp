@@ -3,10 +3,9 @@
 #include "MyStm32.h"
 #include "OLED_Data.h"
 
-Device::Timer::Universal_timer timer{
-    Device::Timer::Universal_timer::TimerType::timer_2, 1000_ms};
+Device::Timer::Universal_timer timer{Device::Timer::Universal_timer::TimerType::timer_2, 1000_ms};
 Device::LED led{Port::A, Pin::Pin0};
-Device::OLED oled;
+Device::OLED oled{Port::B,Pin::Pin8,Port::B,Pin::Pin9};
 timer2_fun
 {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) ==
