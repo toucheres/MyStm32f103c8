@@ -1,7 +1,6 @@
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "MyStm32.h"
-#include "OLED_Data.h"
 
 Device::Timer::Universal_timer timer{Device::Timer::Universal_timer::TimerType::timer_2, 1000_ms};
 Device::LED led{Port::A, Pin::Pin0};
@@ -37,7 +36,6 @@ int main(void)
     oled.DrawRectangle(70, 40, 30, 15, true); // 填充矩形
     oled.DrawCircle(40, 40, 10, 0);              // 空心圆    // 更新显示
     oled.Update();
-
     while (1)
     {
         // 主循环
