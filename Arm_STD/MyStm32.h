@@ -1,5 +1,5 @@
-#ifndef _TP_H_
-#define _TP_H_
+#ifndef _MYSTM32_H_
+#define _MYSTM32_H_
 
 #include "stm32f10x.h"
 extern "C"
@@ -299,7 +299,7 @@ namespace Device
                                     TIM_OCInitTypeDef *TIM_OCInitStruct,
                                     uint8_t channel);
             // 根据指定的通道号动态配置TIMx外设预加载寄存器
-            void TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel);
+            void static TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel);
 
                 void init();
             class ChannalType
