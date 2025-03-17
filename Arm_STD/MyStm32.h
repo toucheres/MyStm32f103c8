@@ -2,7 +2,8 @@
 #define _TP_H_
 
 #include "stm32f10x.h"
-extern "C" {
+extern "C"
+{
 #include "OLED.h"
 #include <math.h>
 #include <stdio.h>
@@ -74,11 +75,11 @@ public:
 class IO
 {
     static uint16_t used[3];
-    
-public:
-    static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin);
 
-    class InitHelper  // 添加名称替代匿名类
+public:
+    // static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin);
+
+    class InitHelper // 添加名称替代匿名类
     {
         GPIO_TypeDef *port;
         static void doInitPin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode);
@@ -107,7 +108,7 @@ public:
             void Pin14(GPIOMode_TypeDef mode) const;
             void Pin15(GPIOMode_TypeDef mode) const;
         };
-        
+
         Port_Init ProtA{Port::A};
         Port_Init ProtB{Port::B};
         Port_Init ProtC{Port::C};
@@ -116,7 +117,7 @@ public:
         Port_Init ProtF{Port::F};
     } static init;
 
-    class WriteHelper  // 添加名称替代匿名类
+    class WriteHelper // 添加名称替代匿名类
     {
         GPIO_TypeDef *port;
         static void doWritePin(GPIO_TypeDef *port, uint16_t pin, BitAction value);
@@ -145,7 +146,7 @@ public:
             void Pin14(uint8_t value) const;
             void Pin15(uint8_t value) const;
         };
-        
+
         Port_Write ProtA{Port::A};
         Port_Write ProtB{Port::B};
         Port_Write ProtC{Port::C};
@@ -154,7 +155,7 @@ public:
         Port_Write ProtF{Port::F};
     } static write;
 
-    class ReadHelper  // 添加名称替代匿名类
+    class ReadHelper // 添加名称替代匿名类
     {
         GPIO_TypeDef *port;
         static bool doReadPin(GPIO_TypeDef *port, uint16_t pin);
@@ -183,7 +184,7 @@ public:
             void Pin14(uint8_t value) const;
             void Pin15(uint8_t value) const;
         };
-        
+
         Port_read ProtA{Port::A};
         Port_read ProtB{Port::B};
         Port_read ProtC{Port::C};
@@ -229,7 +230,7 @@ public:
         constexpr static const uint32_t Timer_10_RCC = ((uint32_t)0x00100000);
         constexpr static const uint32_t Timer_11_RCC = ((uint32_t)0x00200000);
     } port_to_open;
-    
+
     class Open
     {
     public:
@@ -238,7 +239,7 @@ public:
         static void AHBPeriph(uint32_t AHBPe_RCCriph);
         static void port(GPIO_TypeDef *port);
     } open;
-    
+
     class Close
     {
     public:
@@ -282,42 +283,89 @@ namespace Device
     class Timer
     {
     public:
+        class Channal
+        {
+
+        public:
+            const uint8_t timer;
+            const uint8_t index;
+            Channal(uint8_t _timer, uint8_t _index);
+            Channal();
+            Timer::Channal &operator=(Timer::Channal &&that);
+            uint16_t getPin();
+            GPIO_TypeDef *getPort();
+            // 动态初始化channal(标准库居然没有)
+            void static TIM_OCxInit(TIM_TypeDef *TIMx,
+                                    TIM_OCInitTypeDef *TIM_OCInitStruct,
+                                    uint8_t channel);
+            // 根据指定的通道号动态配置TIMx外设预加载寄存器
+            void TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel);
+
+                void init();
+            class ChannalType
+            {
+            public:
+                constexpr static const uint8_t channal_1 = 0b0001;
+                constexpr static const uint8_t channal_2 = 0b0010;
+                constexpr static const uint8_t channal_3 = 0b0100;
+                constexpr static const uint8_t channal_4 = 0b1000;
+            };
+        };
         class Universal_timer
         {
         public:
             class TimerType
             {
             public:
-                static const uint8_t timer_2 = 0;
-                static const uint8_t timer_3 = 1;
-                static const uint8_t timer_4 = 2;
+                constexpr static const uint8_t timer_2 = 0;
+                constexpr static const uint8_t timer_3 = 1;
+                constexpr static const uint8_t timer_4 = 2;
             };
-            
+
         private:
             uint8_t index;
             TIM_TypeDef *BASIC_TIM;
-            
+
         public:
             Universal_timer(uint8_t timerType, time_ms times);
             Universal_timer(uint8_t timerType, time_s times);
             void NVIC_Config();
             void TIM_Config(uint16_t ms_time);
         };
-        
+
         class Advanced_timer
         {
         };
     };
 
+    class PWM
+    {
+        uint8_t channals;
+        uint8_t timer;
+        uint16_t frequency;
+        Timer::Channal channal_1;
+        Timer::Channal channal_2;
+        Timer::Channal channal_3;
+        Timer::Channal channal_4;
+
+      public:
+        
+        PWM(uint8_t timertype, uint8_t channals);
+        void start();
+        void stop();
+        void change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRatio);
+        GPIO_TypeDef *getPort();
+        uint32_t Port_to_Rcc(GPIO_TypeDef *in);
+    };
     // LED类声明
     class LED
     {
         GPIO_TypeDef *port;
         uint16_t pin;
-        
+
     public:
-        LED(GPIO_TypeDef *_port, uint16_t _pin, 
-            GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, 
+        LED(GPIO_TypeDef *_port, uint16_t _pin,
+            GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz,
             GPIOMode_TypeDef mode = IOMode::Out_PP);
         void turn();
     };
@@ -334,7 +382,7 @@ namespace Device
 
         OLED(GPIO_TypeDef *_SCL_port = GPIOB, uint16_t _SCL_pin = GPIO_Pin_8,
              GPIO_TypeDef *_SDA_port = GPIOB, uint16_t _SDA_pin = GPIO_Pin_9);
-             
+
         void W_SCL(uint8_t BitValue);
         void W_SDA(uint8_t BitValue);
         uint32_t GPIOX_to_RCC(GPIO_TypeDef *GPIOX);
@@ -356,7 +404,7 @@ namespace Device
         void Reverse(void);
         void ReverseArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
         void ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize);
-        void ShowString(int16_t X, int16_t Y, char *String, uint8_t FontSize);
+        void ShowString(int16_t X, int16_t Y, const char *String, uint8_t FontSize);
         void ShowNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
         void ShowSignedNum(int16_t X, int16_t Y, int32_t Number, uint8_t Length, uint8_t FontSize);
         void ShowHexNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
@@ -373,7 +421,7 @@ namespace Device
         void DrawEllipse(int16_t X, int16_t Y, uint8_t A, uint8_t B, uint8_t IsFilled);
         void DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAngle, int16_t EndAngle, uint8_t IsFilled);
     };
-    
+
     // OLED_类声明 - C++风格接口封装
     // class OLED_
     // {
@@ -404,7 +452,7 @@ namespace Device
     //     void ShowSignedNum(int16_t x, int16_t y, int32_t number, uint8_t length, uint8_t fontSize);
     //     void ShowHexNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize);
     //     void ShowBinNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize);
-    //     void ShowFloatNum(int16_t x, int16_t y, double number, uint8_t intLength, 
+    //     void ShowFloatNum(int16_t x, int16_t y, double number, uint8_t intLength,
     //                       uint8_t fraLength, uint8_t fontSize);
     //     void ShowImage(int16_t x, int16_t y, uint8_t width, uint8_t height, const uint8_t *image);
     //     void Printf(int16_t x, int16_t y, uint8_t fontSize, const char *format, ...);
@@ -412,11 +460,11 @@ namespace Device
     //     bool GetPoint(int16_t x, int16_t y);
     //     void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
     //     void DrawRectangle(int16_t x, int16_t y, uint8_t width, uint8_t height, bool filled = false);
-    //     void DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
+    //     void DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
     //                       int16_t x2, int16_t y2, bool filled = false);
     //     void DrawCircle(int16_t x, int16_t y, uint8_t radius, bool filled = false);
     //     void DrawEllipse(int16_t x, int16_t y, uint8_t a, uint8_t b, bool filled = false);
-    //     void DrawArc(int16_t x, int16_t y, uint8_t radius, 
+    //     void DrawArc(int16_t x, int16_t y, uint8_t radius,
     //                  int16_t startAngle, int16_t endAngle, bool filled = false);
 
     //     static constexpr uint8_t FONT_SIZE_6X8 = OLED_6X8;

@@ -14,27 +14,27 @@ GPIO_TypeDef *const Port::G = GPIOG;
 uint16_t IO::used[3] = {0, 0, 0};
 
 // sign方法实现
-bool IO::sign(const GPIO_TypeDef *_port, const uint16_t _pin)
-{
-    int index = 0;
-    if (_port == Port::A)
-        index = 0;
-    else if (_port == Port::B)
-        index = 1;
-    else if (_port == Port::C)
-        index = 2;
-    else if (_port == Port::D)
-        index = 3;
-    if (used[index] & _pin)
-    {
-        return false;
-    }
-    else
-    {
-        used[index] &= _pin;
-        return true;
-    }
-}
+// bool IO::sign(const GPIO_TypeDef *_port, const uint16_t _pin)
+// {
+//     int index = 0;
+//     if (_port == Port::A)
+//         index = 0;
+//     else if (_port == Port::B)
+//         index = 1;
+//     else if (_port == Port::C)
+//         index = 2;
+//     else if (_port == Port::D)
+//         index = 3;
+//     if (used[index] & _pin)
+//     {
+//         return false;
+//     }
+//     else
+//     {
+//         used[index] &= _pin;
+//         return true;
+//     }
+// }
 
 // IO::init类实现
 void IO::InitHelper::doInitPin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode)
@@ -402,7 +402,7 @@ Device::LED::LED(GPIO_TypeDef *_port, uint16_t _pin,
                  GPIOSpeed_TypeDef Speed, GPIOMode_TypeDef mode)
     : pin(_pin), port(_port)
 {
-    if (io.sign(_port, _pin))
+    // if (io.sign(_port, _pin))
     {
         clocks.open.port(_port);
         GPIO_InitTypeDef GPIO_InitStructure;
@@ -517,7 +517,7 @@ void Device::OLED::WriteData(uint8_t *Data, uint8_t Count)
     I2C_Start();        // I2C起始
     I2C_SendByte(0x78); // 发送OLED的I2C从机地址
     I2C_SendByte(0x40); // 控制字节，表示即将写数据
-    
+
     // 连续写入指定数量的数据
     for (i = 0; i < Count; i++)
     {
@@ -612,7 +612,7 @@ uint8_t Device::OLED::IsInAngle(int16_t X, int16_t Y, int16_t StartAngle, int16_
 {
     int16_t PointAngle;
     PointAngle = atan2(Y, X) / 3.14 * 180; // 计算指定点的角度
-    
+
     if (StartAngle < EndAngle) // 起始角度小于终止角度
     {
         // 如果点角度在起始和终止角度之间，则在指定角度内
@@ -741,7 +741,7 @@ void Device::OLED::ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize)
     }
 }
 
-void Device::OLED::ShowString(int16_t X, int16_t Y, char *String, uint8_t FontSize)
+void Device::OLED::ShowString(int16_t X, int16_t Y, const char *String, uint8_t FontSize)
 {
     uint16_t i = 0;
     char SingleChar[5];
@@ -1648,3 +1648,285 @@ void Device::OLED::DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAn
 // {
 //     OLED_DrawArc(x, y, radius, startAngle, endAngle, filled ? FILLED : UNFILLED);
 // }
+
+Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
+    : timer(timertype), channals(_channals) {
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+
+    // 使能定时器TIM4时钟，注意TIM4时钟为APB1，而非APB2
+    // RCC_APB1Periph_TIM2
+    RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (this->timer), ENABLE);
+    // 使能PWM输出GPIO口时钟
+    RCC_APB2PeriphClockCmd(Port_to_Rcc(getPort()), ENABLE);
+
+    TIM_TimeBaseStructure.TIM_Period = 1000;            // 自动重装值
+    TIM_TimeBaseStructure.TIM_Prescaler = 72 * 100 - 1; // 时钟预分频数 1000hz\s
+    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up; // TIM向上计数模式
+    TIM_TimeBaseInit(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE +
+                                                     (this->timer * 0x400)),
+                     &TIM_TimeBaseStructure); // 初始化TIM4
+    if (channals & 0b0001)
+    {
+        this->channal_1 = Timer::Channal{timertype, 1};
+        this->channal_1.init();
+    }
+    if (channals & 0b0010)
+    {
+        this->channal_2 = Timer::Channal{timertype, 2};
+        this->channal_2.init();
+    }
+    if (channals & 0b0100)
+    {
+        this->channal_3 = Timer::Channal{timertype, 3};
+        this->channal_3.init();
+    }
+    if (channals & 0b1000)
+    {
+        this->channal_4 = Timer::Channal{timertype, 4};
+        this->channal_4.init();
+    }
+    // 使能4个通道的预装载寄存器
+    TIM_ARRPreloadConfig(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), ENABLE); // 使能重装寄存器
+
+    TIM_Cmd(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), ENABLE); // 使能定时器TIM4，准备工作
+
+}
+void Device::PWM::start()
+{
+
+}
+
+void Device::Timer::Channal::TIM_OCxInit(TIM_TypeDef *TIMx,
+                                         TIM_OCInitTypeDef *TIM_OCInitStruct,
+                                         uint8_t channel)
+{
+    uint16_t tmpccmrx = 0, tmpccer = 0, tmpcr2 = 0;
+    uint16_t channelOffset = (channel - 1) * 4; // 每个通道在CCER寄存器中占4位
+
+    /* 检查参数 */
+    assert_param(IS_TIM_LIST3_PERIPH(TIMx));
+    assert_param(channel >= 1 && channel <= 4); // 检查通道号有效性
+    assert_param(IS_TIM_OC_MODE(TIM_OCInitStruct->TIM_OCMode));
+    assert_param(IS_TIM_OUTPUT_STATE(TIM_OCInitStruct->TIM_OutputState));
+    assert_param(IS_TIM_OC_POLARITY(TIM_OCInitStruct->TIM_OCPolarity));
+
+    /* 禁用指定通道：重置CCxE位 */
+    TIMx->CCER &= (uint16_t)(~(TIM_CCER_CC1E << channelOffset));
+
+    /* 获取TIMx CCER寄存器值 */
+    tmpccer = TIMx->CCER;
+    /* 获取TIMx CR2寄存器值 */
+    tmpcr2 = TIMx->CR2;
+
+    /* 根据通道选择适当的CCMR寄存器 */
+    if (channel <= 2) // 通道1和2在CCMR1中
+    {
+        tmpccmrx = TIMx->CCMR1;
+
+        /* 重置输出比较模式和捕获/比较选择位 */
+        if (channel == 1)
+        {
+            tmpccmrx &= (uint16_t)(~TIM_CCMR1_OC1M);
+            tmpccmrx &= (uint16_t)(~TIM_CCMR1_CC1S);
+            /* 选择输出比较模式 */
+            tmpccmrx |= TIM_OCInitStruct->TIM_OCMode;
+        }
+        else // channel == 2
+        {
+            tmpccmrx &= (uint16_t)(~TIM_CCMR1_OC2M);
+            tmpccmrx &= (uint16_t)(~TIM_CCMR1_CC2S);
+            /* 选择输出比较模式 */
+            tmpccmrx |= (uint16_t)(TIM_OCInitStruct->TIM_OCMode << 8);
+        }
+
+        /* 写入TIMx CCMR1 */
+        TIMx->CCMR1 = tmpccmrx;
+    }
+    else // 通道3和4在CCMR2中
+    {
+        tmpccmrx = TIMx->CCMR2;
+
+        /* 重置输出比较模式和捕获/比较选择位 */
+        if (channel == 3)
+        {
+            tmpccmrx &= (uint16_t)(~TIM_CCMR2_OC3M);
+            tmpccmrx &= (uint16_t)(~TIM_CCMR2_CC3S);
+            /* 选择输出比较模式 */
+            tmpccmrx |= TIM_OCInitStruct->TIM_OCMode;
+        }
+        else // channel == 4
+        {
+            tmpccmrx &= (uint16_t)(~TIM_CCMR2_OC4M);
+            tmpccmrx &= (uint16_t)(~TIM_CCMR2_CC4S);
+            /* 选择输出比较模式 */
+            tmpccmrx |= (uint16_t)(TIM_OCInitStruct->TIM_OCMode << 8);
+        }
+
+        /* 写入TIMx CCMR2 */
+        TIMx->CCMR2 = tmpccmrx;
+    }
+
+    /* 重置输出极性 */
+    tmpccer &= (uint16_t)(~(TIM_CCER_CC1P << channelOffset));
+    /* 设置输出比较极性 */
+    tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OCPolarity << channelOffset);
+
+    /* 设置输出状态 */
+    tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OutputState << channelOffset);
+
+    /* 处理TIM1和TIM8的特殊功能（互补输出等） */
+    if ((TIMx == TIM1) || (TIMx == TIM8) ||
+        ((TIMx == TIM15 || TIMx == TIM16 || TIMx == TIM17) && channel == 1))
+    {
+        assert_param(IS_TIM_OCIDLE_STATE(TIM_OCInitStruct->TIM_OCIdleState));
+
+        /* 仅TIM1/TIM8拥有互补输出 */
+        if ((TIMx == TIM1) || (TIMx == TIM8))
+        {
+            /* 对于通道1、2、3，处理互补输出 */
+            if (channel <= 3)
+            {
+                assert_param(IS_TIM_OUTPUTN_STATE(TIM_OCInitStruct->TIM_OutputNState));
+                assert_param(IS_TIM_OCN_POLARITY(TIM_OCInitStruct->TIM_OCNPolarity));
+                assert_param(IS_TIM_OCNIDLE_STATE(TIM_OCInitStruct->TIM_OCNIdleState));
+
+                /* 重置互补输出极性 */
+                tmpccer &= (uint16_t)(~(TIM_CCER_CC1NP << channelOffset));
+                /* 设置互补输出极性 */
+                tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OCNPolarity << channelOffset);
+
+                /* 重置互补输出状态 */
+                tmpccer &= (uint16_t)(~(TIM_CCER_CC1NE << channelOffset));
+                /* 设置互补输出状态 */
+                tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OutputNState << channelOffset);
+
+                /* 重置输出比较和互补输出比较的空闲状态 */
+                tmpcr2 &= (uint16_t)(~(TIM_CR2_OIS1 << (channel * 2 - 2)));
+                if (channel <= 3) // 只有通道1-3有互补输出
+                {
+                    tmpcr2 &= (uint16_t)(~(TIM_CR2_OIS1N << (channel * 2 - 2)));
+                }
+
+                /* 设置输出空闲状态 */
+                tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCIdleState << (channel * 2 - 2));
+                if (channel <= 3) // 只有通道1-3有互补输出
+                {
+                    /* 设置互补输出空闲状态 */
+                    tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCNIdleState << (channel * 2 - 2));
+                }
+            }
+            else // channel == 4, 只处理空闲状态
+            {
+                /* 重置输出比较空闲状态 */
+                tmpcr2 &= (uint16_t)(~TIM_CR2_OIS4);
+                /* 设置输出空闲状态 */
+                tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCIdleState << 6);
+            }
+        }
+        else // TIM15/16/17, 只对通道1处理空闲状态
+        {
+            /* 重置输出比较空闲状态 */
+            tmpcr2 &= (uint16_t)(~TIM_CR2_OIS1);
+            /* 设置输出空闲状态 */
+            tmpcr2 |= TIM_OCInitStruct->TIM_OCIdleState;
+        }
+    }
+
+    /* 写入TIMx CR2 */
+    TIMx->CR2 = tmpcr2;
+
+    /* 设置捕获比较寄存器值 */
+    switch (channel)
+    {
+    case 1:
+        TIMx->CCR1 = TIM_OCInitStruct->TIM_Pulse;
+        break;
+    case 2:
+        TIMx->CCR2 = TIM_OCInitStruct->TIM_Pulse;
+        break;
+    case 3:
+        TIMx->CCR3 = TIM_OCInitStruct->TIM_Pulse;
+        break;
+    case 4:
+        TIMx->CCR4 = TIM_OCInitStruct->TIM_Pulse;
+        break;
+    }
+
+    /* 写入TIMx CCER */
+    TIMx->CCER = tmpccer;
+}
+
+void Device::Timer::Channal::TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel)
+{
+    uint16_t tmpccmr = 0;
+
+    /* 检查参数 */
+    assert_param(IS_TIM_LIST3_PERIPH(TIMx));
+    assert_param(IS_TIM_OCPRELOAD_STATE(TIM_OCPreload));
+    assert_param(channel >= 1 && channel <= 4); // 检查通道号有效性
+
+    if (channel <= 2) // 通道1和2使用CCMR1寄存器
+    {
+        tmpccmr = TIMx->CCMR1;
+
+        if (channel == 1)
+        {
+            /* 重置OC1PE位 */
+            tmpccmr &= (uint16_t)~((uint16_t)TIM_CCMR1_OC1PE);
+            /* 启用或禁用输出比较预加载功能 */
+            tmpccmr |= TIM_OCPreload;
+        }
+        else // channel == 2
+        {
+            /* 重置OC2PE位 */
+            tmpccmr &= (uint16_t)~((uint16_t)TIM_CCMR1_OC2PE);
+            /* 启用或禁用输出比较预加载功能（注意左移8位） */
+            tmpccmr |= (uint16_t)(TIM_OCPreload << 8);
+        }
+
+        /* 写入TIMx CCMR1寄存器 */
+        TIMx->CCMR1 = tmpccmr;
+    }
+    else // 通道3和4使用CCMR2寄存器
+    {
+        tmpccmr = TIMx->CCMR2;
+
+        if (channel == 3)
+        {
+            /* 重置OC3PE位 */
+            tmpccmr &= (uint16_t)~((uint16_t)TIM_CCMR2_OC3PE);
+            /* 启用或禁用输出比较预加载功能 */
+            tmpccmr |= TIM_OCPreload;
+        }
+        else // channel == 4
+        {
+            /* 重置OC4PE位 */
+            tmpccmr &= (uint16_t)~((uint16_t)TIM_CCMR2_OC4PE);
+            /* 启用或禁用输出比较预加载功能（注意左移8位） */
+            tmpccmr |= (uint16_t)(TIM_OCPreload << 8);
+        }
+
+        /* 写入TIMx CCMR2寄存器 */
+        TIMx->CCMR2 = tmpccmr;
+    }
+}
+void Device::Timer::Channal::init()
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+    GPIO_InitStructure.GPIO_Pin =
+        this->getPin();                             // 定时器TIM4的PWM输出通道1，TIM4_CH1
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 复用推挽输出
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(this->getPort(), &GPIO_InitStructure); // 初始化GPIO
+
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;             // 设置PWM模式1
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; // 比较输出使能
+    TIM_OCInitStructure.TIM_Pulse = 0;                            //
+    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;     // 输出极性为高
+    TIM_OCxInit(
+        reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + this->timer * 0x400),
+        &TIM_OCInitStructure,this->index);
+}
