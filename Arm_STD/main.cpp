@@ -1,6 +1,10 @@
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "MyStm32.h"
+extern "C"
+{
+#include "Delay.h"
+}
 
 // Device::Timer::Universal_timer timer{Device::Timer::Universal_timer::TimerType::timer_2, 1000_ms};
 // Device::LED led{Port::A, Pin::Pin0};
@@ -21,7 +25,7 @@ int main(void)
 {
     // 初始化系统
     SystemInit();
-    pwm.change(1, 1000, 50);
+    pwm.change(1, 1000, 10);
     pwm.start();
     // // 创建并初始化OLED对象
     // oled.Init();
@@ -40,6 +44,15 @@ int main(void)
     // oled.Update();
     while (1)
     {
-        // 主循环
+        for (size_t i = 0; i < 100; i++)
+        {
+            pwm.change(1, 1000, i);
+            Delay_ms(10);
+        }
+        for (size_t i = 100; i > 0; i--)
+        {
+            pwm.change(1, 1000, i);
+            Delay_ms(10);
+        }
     }
 }
