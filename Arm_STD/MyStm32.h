@@ -290,10 +290,12 @@ namespace Device
             uint8_t timer;
             uint8_t index;
             Channal(uint8_t _timer, uint8_t _index);
+            uint32_t portRcc();
             inline Channal()=default;
             Timer::Channal &operator=(Timer::Channal &&that);
             uint16_t getPin();
             GPIO_TypeDef *getPort();
+
             // 动态初始化channal(标准库居然没有)
             void static TIM_OCxInit(TIM_TypeDef *TIMx,
                                     TIM_OCInitTypeDef *TIM_OCInitStruct,

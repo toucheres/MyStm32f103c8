@@ -1786,8 +1786,11 @@ uint32_t Device::PWM::getRcc()
 Device::Timer::Channal::Channal(uint8_t _timer, uint8_t _index)
     : timer(_timer), index(_index) {}
 
-Device::Timer::Channal &
-Device::Timer::Channal::operator=(Timer::Channal &&that)
+uint32_t Device::Timer::Channal::portRcc() {
+   return 1 << ((reinterpret_cast<uint32_t> (this->getPort()) - APB2PERIPH_BASE)/0x400);
+}
+
+Device::Timer::Channal & Device::Timer::Channal::operator=(Timer::Channal &&that)
 {
     // TODO: 在此处插入 return 语句
     this->timer = that.timer;
@@ -1887,6 +1890,8 @@ GPIO_TypeDef *Device::Timer::Channal::getPort()
     // [TODO]more
     return 0;
 }
+
+
 
 void Device::Timer::Channal::TIM_OCxInit(TIM_TypeDef *TIMx,
                                          TIM_OCInitTypeDef *TIM_OCInitStruct,
@@ -2106,8 +2111,9 @@ void Device::Timer::Channal::TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TI
         TIMx->CCMR2 = tmpccmr;
     }
 }
-void Device::Timer::Channal::init()
-{
+void Device::Timer::Channal::init() {
+
+    RCC_APB2PeriphClockCmd(this->portRcc(), ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef TIM_OCInitStructure;
