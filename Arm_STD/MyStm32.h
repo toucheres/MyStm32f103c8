@@ -7,6 +7,7 @@ extern "C"
 #include "OLED.h"
 #include <math.h>
 #include <stdio.h>
+#include "Delay.h"    
 }
 
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)

@@ -1,10 +1,6 @@
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "MyStm32.h"
-extern "C"
-{
-#include "Delay.h"
-}
 
 // Device::Timer::Universal_timer timer{Device::Timer::Universal_timer::TimerType::timer_2, 1000_ms};
 // Device::LED led{Port::A, Pin::Pin0};
