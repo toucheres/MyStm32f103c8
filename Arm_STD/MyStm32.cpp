@@ -1650,22 +1650,23 @@ void Device::OLED::DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAn
 // }
 
 Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
-    : timer(timertype), channals(_channals), frequency(1000) {
+    : timer(timertype), channals(_channals), frequency(1000)
+{
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
     // 使能定时器时钟，注意定时器时钟为APB1，而非APB2
     RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (this->timer), ENABLE);
     // 使能PWM输出GPIO口时钟
-    RCC_APB2PeriphClockCmd(Port_to_Rcc(getPort()), ENABLE);
+    // RCC_APB2PeriphClockCmd(Port_to_Rcc(getPort()), ENABLE);
 
-    TIM_TimeBaseStructure.TIM_Period = 999;             // 自动重装值 (ARR)，实际周期为1000
-    TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1;       // 时钟预分频数，72MHz/(72-1+1)=1MHz
+    TIM_TimeBaseStructure.TIM_Period = 999;       // 自动重装值 (ARR)，实际周期为1000
+    TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1; // 时钟预分频数，72MHz/(72-1+1)=1MHz
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up; // TIM向上计数模式
     TIM_TimeBaseInit(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE +
                                                      (this->timer * 0x400)),
                      &TIM_TimeBaseStructure);
-    
+
     // 初始化各个通道
     if (channals & 0b0001)
     {
@@ -1673,7 +1674,7 @@ Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
         this->channal_1.init();
         // 启用通道1预装载
         Timer::Channal::TIM_OCxPreloadConfig(
-            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), 
+            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer),
             TIM_OCPreload_Enable, 1);
     }
     if (channals & 0b0010)
@@ -1682,7 +1683,7 @@ Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
         this->channal_2.init();
         // 启用通道2预装载
         Timer::Channal::TIM_OCxPreloadConfig(
-            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), 
+            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer),
             TIM_OCPreload_Enable, 2);
     }
     if (channals & 0b0100)
@@ -1691,7 +1692,7 @@ Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
         this->channal_3.init();
         // 启用通道3预装载
         Timer::Channal::TIM_OCxPreloadConfig(
-            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), 
+            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer),
             TIM_OCPreload_Enable, 3);
     }
     if (channals & 0b1000)
@@ -1700,13 +1701,13 @@ Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
         this->channal_4.init();
         // 启用通道4预装载
         Timer::Channal::TIM_OCxPreloadConfig(
-            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), 
+            reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer),
             TIM_OCPreload_Enable, 4);
     }
-    
+
     // 启用自动重装载预装载
     TIM_ARRPreloadConfig(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), ENABLE);
-    
+
     // 启动定时器
     TIM_Cmd(reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer), ENABLE);
 }
@@ -1726,7 +1727,7 @@ void Device::PWM::stop()
 void Device::PWM::change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRatio)
 {
     TIM_TypeDef *TIMx = reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + 0x0400 * this->timer);
-    
+
     // 更新频率（改变ARR值）
     if (_frequency != frequency)
     {
@@ -1734,48 +1735,157 @@ void Device::PWM::change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRati
         uint16_t period = 1000000 / frequency - 1; // 假设主时钟已被分频到1MHz
         TIMx->ARR = period;
     }
-    
+
     // 根据占空比设置比较值
     uint16_t pulse = ((TIMx->ARR + 1) * _dutyRatio) / 100;
-    
+
     // 根据通道设置比较值
     switch (channal)
     {
-        case 1:
-            TIMx->CCR1 = pulse;
-            break;
-        case 2:
-            TIMx->CCR2 = pulse;
-            break;
-        case 3:
-            TIMx->CCR3 = pulse;
-            break;
-        case 4:
-            TIMx->CCR4 = pulse;
-            break;
+    case 1:
+        TIMx->CCR1 = pulse;
+        break;
+    case 2:
+        TIMx->CCR2 = pulse;
+        break;
+    case 3:
+        TIMx->CCR3 = pulse;
+        break;
+    case 4:
+        TIMx->CCR4 = pulse;
+        break;
     }
 }
-
-GPIO_TypeDef* Device::PWM::getPort()
+// 返回定时器的Rcc
+uint32_t Device::PWM::getRcc()
 {
-    // 根据定时器和通道获取对应的GPIO端口
-    // 这里简单返回GPIOA，实际应该根据timer类型和通道号确定
-    // 需要参考STM32的硬件手册确定每个定时器通道对应的端口
-    return GPIOA;
+    return APB2PERIPH_BASE + this->timer * 0x400;
 }
 
-uint32_t Device::PWM::Port_to_Rcc(GPIO_TypeDef* in)
+// uint32_t Device::PWM::Port_to_Rcc(GPIO_TypeDef *in)
+// {
+//     // 将GPIO端口转换为对应的RCC时钟使能位
+//     if (in == GPIOA)
+//         return RCC_APB2Periph_GPIOA;
+//     if (in == GPIOB)
+//         return RCC_APB2Periph_GPIOB;
+//     if (in == GPIOC)
+//         return RCC_APB2Periph_GPIOC;
+//     if (in == GPIOD)
+//         return RCC_APB2Periph_GPIOD;
+//     if (in == GPIOE)
+//         return RCC_APB2Periph_GPIOE;
+//     if (in == GPIOF)
+//         return RCC_APB2Periph_GPIOF;
+//     if (in == GPIOG)
+//         return RCC_APB2Periph_GPIOG;
+
+//     return 0; // 默认返回0，表示无效
+// }
+
+Device::Timer::Channal::Channal(uint8_t _timer, uint8_t _index)
+    : timer(_timer), index(_index) {}
+
+Device::Timer::Channal &
+Device::Timer::Channal::operator=(Timer::Channal &&that)
 {
-    // 将GPIO端口转换为对应的RCC时钟使能位
-    if (in == GPIOA) return RCC_APB2Periph_GPIOA;
-    if (in == GPIOB) return RCC_APB2Periph_GPIOB;
-    if (in == GPIOC) return RCC_APB2Periph_GPIOC;
-    if (in == GPIOD) return RCC_APB2Periph_GPIOD;
-    if (in == GPIOE) return RCC_APB2Periph_GPIOE;
-    if (in == GPIOF) return RCC_APB2Periph_GPIOF;
-    if (in == GPIOG) return RCC_APB2Periph_GPIOG;
-    
-    return 0; // 默认返回0，表示无效
+    // TODO: 在此处插入 return 语句
+    this->timer = that.timer;
+    this->index = that.index;
+    return *this;
+}
+// 返回通道的引脚的pin
+uint16_t Device::Timer::Channal::getPin()
+{
+    switch (this->timer)
+    {
+    case Timer::Universal_timer::TimerType::timer_2:
+        switch (this->index)
+        {
+        case 1:
+            return Pin::Pin0;
+            break;
+        case 2:
+            return Pin::Pin1;
+            break;
+        case 3:
+            return Pin::Pin2;
+            break;
+        case 4:
+            return Pin::Pin3;
+            break;
+        default:
+            // [TODO] more
+            break;
+        }
+        break;
+    case Timer::Universal_timer::TimerType::timer_3:
+        switch (this->index)
+        {
+        case 1:
+            return Pin::Pin6;
+            break;
+        case 2:
+            return Pin::Pin7;
+            break;
+        case 3:
+            return Pin::Pin0;
+            break;
+        case 4:
+            return Pin::Pin1;
+            break;
+        default:
+            // [TODO] more
+            break;
+        }
+        break;
+    case Timer::Universal_timer::TimerType::timer_4:
+        switch (this->index)
+        {
+        case 1:
+            return Pin::Pin6;
+            break;
+        case 2:
+            return Pin::Pin7;
+            break;
+        case 3:
+            return Pin::Pin8;
+            break;
+        case 4:
+            return Pin::Pin9;
+            break;
+        default:
+            // [TODO] more
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+// 返回通道引脚的port
+GPIO_TypeDef *Device::Timer::Channal::getPort()
+{
+    switch (this->timer)
+    {
+    case Timer::Universal_timer::TimerType::timer_2:
+        return GPIOA;
+        break;
+    case Timer::Universal_timer::TimerType::timer_3:
+        if (this->index == 1 || this->index == 2)
+            return GPIOA;
+        else if (this->index == 3 || this->index == 4)
+            return GPIOB;
+        break;
+    case Timer::Universal_timer::TimerType::timer_4:
+        return GPIOB;
+        break;
+    default:
+        break;
+    }
+    // [TODO]more
+    return 0;
 }
 
 void Device::Timer::Channal::TIM_OCxInit(TIM_TypeDef *TIMx,
@@ -1875,12 +1985,14 @@ void Device::Timer::Channal::TIM_OCxInit(TIM_TypeDef *TIMx,
                 /* 重置互补输出极性 */
                 tmpccer &= (uint16_t)(~(TIM_CCER_CC1NP << channelOffset));
                 /* 设置互补输出极性 */
-                tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OCNPolarity << channelOffset);
+                tmpccer |=
+                    (uint16_t)(TIM_OCInitStruct->TIM_OCNPolarity << channelOffset);
 
                 /* 重置互补输出状态 */
                 tmpccer &= (uint16_t)(~(TIM_CCER_CC1NE << channelOffset));
                 /* 设置互补输出状态 */
-                tmpccer |= (uint16_t)(TIM_OCInitStruct->TIM_OutputNState << channelOffset);
+                tmpccer |=
+                    (uint16_t)(TIM_OCInitStruct->TIM_OutputNState << channelOffset);
 
                 /* 重置输出比较和互补输出比较的空闲状态 */
                 tmpcr2 &= (uint16_t)(~(TIM_CR2_OIS1 << (channel * 2 - 2)));
@@ -1890,11 +2002,13 @@ void Device::Timer::Channal::TIM_OCxInit(TIM_TypeDef *TIMx,
                 }
 
                 /* 设置输出空闲状态 */
-                tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCIdleState << (channel * 2 - 2));
+                tmpcr2 |=
+                    (uint16_t)(TIM_OCInitStruct->TIM_OCIdleState << (channel * 2 - 2));
                 if (channel <= 3) // 只有通道1-3有互补输出
                 {
                     /* 设置互补输出空闲状态 */
-                    tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCNIdleState << (channel * 2 - 2));
+                    tmpcr2 |= (uint16_t)(TIM_OCInitStruct->TIM_OCNIdleState
+                                         << (channel * 2 - 2));
                 }
             }
             else // channel == 4, 只处理空闲状态
@@ -2009,5 +2123,5 @@ void Device::Timer::Channal::init()
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;     // 输出极性为高
     TIM_OCxInit(
         reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + this->timer * 0x400),
-        &TIM_OCInitStructure,this->index);
+        &TIM_OCInitStructure, this->index);
 }

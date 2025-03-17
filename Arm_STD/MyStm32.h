@@ -287,10 +287,10 @@ namespace Device
         {
 
         public:
-            const uint8_t timer;
-            const uint8_t index;
+            uint8_t timer;
+            uint8_t index;
             Channal(uint8_t _timer, uint8_t _index);
-            Channal();
+            inline Channal()=default;
             Timer::Channal &operator=(Timer::Channal &&that);
             uint16_t getPin();
             GPIO_TypeDef *getPort();
@@ -301,7 +301,7 @@ namespace Device
             // 根据指定的通道号动态配置TIMx外设预加载寄存器
             void static TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel);
 
-                void init();
+            void init();
             class ChannalType
             {
             public:
@@ -348,14 +348,13 @@ namespace Device
         Timer::Channal channal_3;
         Timer::Channal channal_4;
 
-      public:
-        
+    public:
         PWM(uint8_t timertype, uint8_t channals);
         void start();
         void stop();
         void change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRatio);
-        GPIO_TypeDef *getPort();
-        uint32_t Port_to_Rcc(GPIO_TypeDef *in);
+        uint32_t getRcc();
+        // uint32_t Port_to_Rcc(GPIO_TypeDef *in);
     };
     // LED类声明
     class LED

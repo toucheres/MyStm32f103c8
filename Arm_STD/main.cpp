@@ -21,7 +21,8 @@ int main(void)
 {
     // 初始化系统
     SystemInit();
-
+    pwm.change(1, 1000, 50);
+    pwm.start();
     // // 创建并初始化OLED对象
     // oled.Init();
     // oled.Clear();
