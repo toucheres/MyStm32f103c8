@@ -4,10 +4,8 @@
 #include "stm32f10x.h"
 extern "C"
 {
-// #include "OLED.h"
 #include <math.h>
 #include <stdio.h>
-#include "Delay.h"
 }
 
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
@@ -18,58 +16,54 @@ extern "C"
 class Port
 {
 public:
-    static GPIO_TypeDef *const A;
-    static GPIO_TypeDef *const B;
-    static GPIO_TypeDef *const C;
-    static GPIO_TypeDef *const D;
-    static GPIO_TypeDef *const E;
-    static GPIO_TypeDef *const F;
-    static GPIO_TypeDef *const G;
+    inline static GPIO_TypeDef *const A = GPIOA;
+    inline static GPIO_TypeDef *const B = GPIOB;
+    inline static GPIO_TypeDef *const C = GPIOC;
 };
 
 // Pin类声明
 class Pin
 {
 public:
-    static const uint16_t Pin0 = GPIO_Pin_0;
-    static const uint16_t Pin1 = GPIO_Pin_1;
-    static const uint16_t Pin2 = GPIO_Pin_2;
-    static const uint16_t Pin3 = GPIO_Pin_3;
-    static const uint16_t Pin4 = GPIO_Pin_4;
-    static const uint16_t Pin5 = GPIO_Pin_5;
-    static const uint16_t Pin6 = GPIO_Pin_6;
-    static const uint16_t Pin7 = GPIO_Pin_7;
-    static const uint16_t Pin8 = GPIO_Pin_8;
-    static const uint16_t Pin9 = GPIO_Pin_9;
-    static const uint16_t Pin10 = GPIO_Pin_10;
-    static const uint16_t Pin11 = GPIO_Pin_11;
-    static const uint16_t Pin12 = GPIO_Pin_12;
-    static const uint16_t Pin13 = GPIO_Pin_13;
-    static const uint16_t Pin14 = GPIO_Pin_14;
-    static const uint16_t Pin15 = GPIO_Pin_15;
+    constexpr static const uint16_t Pin0 = GPIO_Pin_0;
+    constexpr static const uint16_t Pin1 = GPIO_Pin_1;
+    constexpr static const uint16_t Pin2 = GPIO_Pin_2;
+    constexpr static const uint16_t Pin3 = GPIO_Pin_3;
+    constexpr static const uint16_t Pin4 = GPIO_Pin_4;
+    constexpr static const uint16_t Pin5 = GPIO_Pin_5;
+    constexpr static const uint16_t Pin6 = GPIO_Pin_6;
+    constexpr static const uint16_t Pin7 = GPIO_Pin_7;
+    constexpr static const uint16_t Pin8 = GPIO_Pin_8;
+    constexpr static const uint16_t Pin9 = GPIO_Pin_9;
+    constexpr static const uint16_t Pin10 = GPIO_Pin_10;
+    constexpr static const uint16_t Pin11 = GPIO_Pin_11;
+    constexpr static const uint16_t Pin12 = GPIO_Pin_12;
+    constexpr static const uint16_t Pin13 = GPIO_Pin_13;
+    constexpr static const uint16_t Pin14 = GPIO_Pin_14;
+    constexpr static const uint16_t Pin15 = GPIO_Pin_15;
 };
 
 // IOMode类声明
 class IOMode
 {
 public:
-    static const GPIOMode_TypeDef AIN = GPIO_Mode_AIN;
-    static const GPIOMode_TypeDef IN_FLOATING = GPIO_Mode_IN_FLOATING;
-    static const GPIOMode_TypeDef IPD = GPIO_Mode_IPD;
-    static const GPIOMode_TypeDef IPU = GPIO_Mode_IPU;
-    static const GPIOMode_TypeDef Out_OD = GPIO_Mode_Out_OD;
-    static const GPIOMode_TypeDef Out_PP = GPIO_Mode_Out_PP;
-    static const GPIOMode_TypeDef AF_OD = GPIO_Mode_AF_OD;
-    static const GPIOMode_TypeDef AF_PP = GPIO_Mode_AF_PP;
+    constexpr static const GPIOMode_TypeDef AIN = GPIO_Mode_AIN;
+    constexpr static const GPIOMode_TypeDef IN_FLOATING = GPIO_Mode_IN_FLOATING;
+    constexpr static const GPIOMode_TypeDef IPD = GPIO_Mode_IPD;
+    constexpr static const GPIOMode_TypeDef IPU = GPIO_Mode_IPU;
+    constexpr static const GPIOMode_TypeDef Out_OD = GPIO_Mode_Out_OD;
+    constexpr static const GPIOMode_TypeDef Out_PP = GPIO_Mode_Out_PP;
+    constexpr static const GPIOMode_TypeDef AF_OD = GPIO_Mode_AF_OD;
+    constexpr static const GPIOMode_TypeDef AF_PP = GPIO_Mode_AF_PP;
 };
 
 // IOSpeed类声明
 class IOSpeed
 {
 public:
-    static const GPIOSpeed_TypeDef _50MHz = GPIO_Speed_50MHz;
-    static const GPIOSpeed_TypeDef _2MHz = GPIO_Speed_2MHz;
-    static const GPIOSpeed_TypeDef _10MHz = GPIO_Speed_10MHz;
+    constexpr static const GPIOSpeed_TypeDef _50MHz = GPIO_Speed_50MHz;
+    constexpr static const GPIOSpeed_TypeDef _2MHz = GPIO_Speed_2MHz;
+    constexpr static const GPIOSpeed_TypeDef _10MHz = GPIO_Speed_10MHz;
 };
 
 // IO类声明
@@ -113,9 +107,7 @@ public:
         Port_Init ProtA{Port::A};
         Port_Init ProtB{Port::B};
         Port_Init ProtC{Port::C};
-        Port_Init ProtD{Port::D};
-        Port_Init ProtE{Port::E};
-        Port_Init ProtF{Port::F};
+
     } static init;
 
     class WriteHelper // 添加名称替代匿名类
@@ -151,9 +143,7 @@ public:
         Port_Write ProtA{Port::A};
         Port_Write ProtB{Port::B};
         Port_Write ProtC{Port::C};
-        Port_Write ProtD{Port::D};
-        Port_Write ProtE{Port::E};
-        Port_Write ProtF{Port::F};
+
     } static write;
 
     class ReadHelper // 添加名称替代匿名类
@@ -189,9 +179,7 @@ public:
         Port_read ProtA{Port::A};
         Port_read ProtB{Port::B};
         Port_read ProtC{Port::C};
-        Port_read ProtD{Port::D};
-        Port_read ProtE{Port::E};
-        Port_read ProtF{Port::F};
+
     } static read;
 
     static uint16_t read_port(GPIO_TypeDef *port);
@@ -252,26 +240,37 @@ public:
 } static clocks;
 
 // 时间类声明
+class time_us
+{
+public:
+  constexpr time_us(uint16_t _val) : val(_val) {}
+  constexpr operator uint16_t() const { return val; }
+  uint16_t val;
+};
 class time_ms
 {
 public:
-    constexpr time_ms(uint16_t _val) : val(_val) {}
-    uint16_t val;
+  constexpr time_ms(uint16_t _val) : val(_val) {}
+  constexpr operator uint16_t() const { return val; }
+  uint16_t val;
 };
-
 class time_s
 {
 public:
-    constexpr time_s(uint16_t _val) : val(_val) {}
-    uint16_t val;
+  constexpr time_s(uint16_t _val) : val(_val) {}
+  constexpr operator uint16_t() const { return val; }
+  uint16_t val;
 };
 
 // 运算符重载函数声明
+inline constexpr time_s operator"" _us(unsigned long long _val)
+{
+    return time_s{static_cast<uint16_t>(_val)};
+}
 inline constexpr time_ms operator"" _ms(unsigned long long _val)
 {
     return time_ms{static_cast<uint16_t>(_val)};
 }
-
 inline constexpr time_s operator"" _s(unsigned long long _val)
 {
     return time_s{static_cast<uint16_t>(_val)};
@@ -357,7 +356,6 @@ namespace Device
         void stop();
         void change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRatio);
         uint32_t getRcc();
-        // uint32_t Port_to_Rcc(GPIO_TypeDef *in);
     };
     // LED类声明
     class LED
@@ -478,5 +476,12 @@ namespace Device
     //     static constexpr uint8_t FONT_SIZE_8X16 = OLED_8X16;
     // };
 } // namespace Device
+
+namespace System
+{
+    void delay(time_ms);
+    void delay(time_us);
+    void delay(time_s);
+};
 
 #endif // _TP_H_

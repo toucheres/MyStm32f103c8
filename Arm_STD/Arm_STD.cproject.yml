@@ -6,7 +6,6 @@ project:
       files:
         - file: ./main.cpp
         - file: OLED_Data.c
-        - file: Delay.c
         - file: ./MyStm32.cpp
         # - file: ./MyStm32.cpp
 

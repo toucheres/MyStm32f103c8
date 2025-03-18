@@ -6,13 +6,6 @@ extern "C"
 #include "OLED_Data.h"
 }
 // Port类静态成员实现
-GPIO_TypeDef *const Port::A = GPIOA;
-GPIO_TypeDef *const Port::B = GPIOB;
-GPIO_TypeDef *const Port::C = GPIOC;
-GPIO_TypeDef *const Port::D = GPIOD;
-GPIO_TypeDef *const Port::E = GPIOE;
-GPIO_TypeDef *const Port::F = GPIOF;
-GPIO_TypeDef *const Port::G = GPIOG;
 
 // IO类静态成员实现
 uint16_t IO::used[3] = {0, 0, 0};
@@ -1741,7 +1734,7 @@ void Device::PWM::change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRati
     }
 
     // 根据占空比设置比较值
-    uint16_t pulse = ((TIMx->ARR + 1) * _dutyRatio) / 100;
+    uint16_t pulse = (TIMx->ARR + 1)-(((TIMx->ARR + 1) * _dutyRatio) / 100);
 
     // 根据通道设置比较值
     switch (channal)
@@ -2134,4 +2127,27 @@ void Device::Timer::Channal::init()
     TIM_OCxInit(
         reinterpret_cast<TIM_TypeDef *>(APB1PERIPH_BASE + this->timer * 0x400),
         &TIM_OCInitStructure, this->index);
+}
+void System::delay(time_s time)
+{
+    for (uint16_t i = 0; i < time; i++)
+    {
+        delay(1000_ms);
+    }
+}
+void System::delay(time_ms time)
+{
+    for (uint16_t i = 0; i < time; i++)
+    {
+        delay(1000_us);
+    }
+}
+void System::delay(time_us time)
+{
+    SysTick->LOAD = 72 * time;  // 设置定时器重装值
+    SysTick->VAL = 0x00;        // 清空当前计数值
+    SysTick->CTRL = 0x00000005; // 设置时钟源为HCLK，启动定时器
+    while (!(SysTick->CTRL & 0x00010000))
+        ;                       // 等待计数到0
+    SysTick->CTRL = 0x00000004; // 关闭定时器
 }
