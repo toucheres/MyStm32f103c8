@@ -52,3 +52,6 @@ int main(void)
         }
     }
 }
+// Program Size: Code=4176 RO-data=256 RW-data=0 ZI-data=5136
+// Program Size: Code=2000 RO-data=256 RW-data=0 ZI-data=5136
+// Program Size: Code=2888 RO-data=296 RW-data=0 ZI-data=5136

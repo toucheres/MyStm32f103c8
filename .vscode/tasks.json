@@ -43,7 +43,7 @@
             "dependsOn": [
                 "Build",
                 "Flash Device",
-              //  "Delay", // 添加延时
+                //  "Delay", // 添加延时
                 "Reset STM32"
             ],
             "dependsOrder": "sequence",
@@ -51,6 +51,22 @@
                 "kind": "build",
                 "isDefault": true
             },
+        },
+        {
+            "label": "start-qemu",
+            "type": "shell",
+            "command": "qemu-system-arm -M stm32-p103 -cpu cortex-m3 -kernel ${workspaceFolder}/out/Arm_STD/STM32F103C8/Debug/Arm_STD.axf -nographic -s -S",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "."
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "."
+                }
+            }
         }
     ]
 }

@@ -4,10 +4,10 @@
 #include "stm32f10x.h"
 extern "C"
 {
-#include "OLED.h"
+// #include "OLED.h"
 #include <math.h>
 #include <stdio.h>
-#include "Delay.h"    
+#include "Delay.h"
 }
 
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
@@ -292,7 +292,7 @@ namespace Device
             uint8_t index;
             Channal(uint8_t _timer, uint8_t _index);
             uint32_t portRcc();
-            inline Channal()=default;
+            inline Channal() = default;
             Timer::Channal &operator=(Timer::Channal &&that);
             uint16_t getPin();
             GPIO_TypeDef *getPort();
@@ -376,6 +376,11 @@ namespace Device
     class OLED
     {
     public:
+        constexpr static const uint8_t OLED_8X16 = 8;
+        constexpr static const uint8_t OLED_6X8 = 6;
+        /*IsFilled参数数值*/
+        constexpr static const uint8_t OLED_UNFILLED = 0;
+        constexpr static const uint8_t OLED_FILLED = 1;
         GPIO_TypeDef *SCL_port;
         uint16_t SCL_pin;
         GPIO_TypeDef *SDA_port;

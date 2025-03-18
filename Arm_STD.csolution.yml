@@ -29,6 +29,11 @@ solution:
     - type: Release
       debug: off
       optimize: balanced
+    
+    - type: Size
+      compiler: AC6
+      optimize: size       # -Os，尺寸优化
+      debug: off
 
   # List related projects.
   projects:
