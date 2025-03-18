@@ -19,6 +19,7 @@ project:
     - component: Keil::Device:StdPeriph Drivers:GPIO
     - component: Keil::Device:StdPeriph Drivers:RCC
     - component: Keil::Device:StdPeriph Drivers:TIM
+    - component: Keil::Device:StdPeriph Drivers:ADC
 
   # List executable file formats to be generated.
   output:

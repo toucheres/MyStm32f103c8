@@ -235,6 +235,19 @@ void IO::ReadHelper::Port_read::Pin13(uint8_t value) const { doReadPin(port, GPI
 void IO::ReadHelper::Port_read::Pin14(uint8_t value) const { doReadPin(port, GPIO_Pin_14); }
 void IO::ReadHelper::Port_read::Pin15(uint8_t value) const { doReadPin(port, GPIO_Pin_15); }
 
+void IO::init_port(GPIO_TypeDef *port) {
+  clocks.open.port(port);
+}
+
+void IO::init_pin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode)
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Pin = pin;
+    GPIO_InitStructure.GPIO_Mode = mode;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(port, &GPIO_InitStructure);
+}
+
 // IO静态辅助方法实现
 uint16_t IO::read_port(GPIO_TypeDef *port)
 {
@@ -422,6 +435,7 @@ Device::OLED::OLED(GPIO_TypeDef *_SCL_port, uint16_t _SCL_pin,
     : SCL_port(_SCL_port), SCL_pin(_SCL_pin), SDA_port(_SDA_port), SDA_pin(_SDA_pin)
 {
 }
+
 
 void Device::OLED::W_SCL(uint8_t BitValue)
 {

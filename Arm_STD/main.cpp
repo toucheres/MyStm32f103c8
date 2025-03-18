@@ -19,9 +19,9 @@ timer3_fun
         flag %= 100;
         if (times % 100 == 0)
         {
-            // oled.Clear();
-            // oled.ShowNum(0, 0, times, 5, Device::OLED::OLED_6X8);
-            // oled.Update();
+            oled.Clear();
+            oled.ShowNum(0, 0, times, 5, Device::OLED::OLED_6X8);
+            oled.Update();
         }
         pwm.change(Device::Timer::Channal::ChannalType::channal_1, 10000, flag);
         TIM_ClearITPendingBit(TIM3,
@@ -39,16 +39,16 @@ int main(void)
     oled.Clear();
 
     // // 显示文本
-    oled.ShowChar(0, 0, 'A', Device::OLED::OLED_6X8);
-    oled.ShowString(16, 0, "new life", Device::OLED::OLED_8X16);
+    // oled.ShowChar(0, 0, 'A', Device::OLED::OLED_6X8);
+    // oled.ShowString(16, 0, "new life", Device::OLED::OLED_8X16);
 
-    // 显示数字
-    oled.ShowNum(0, 28, 12345, 5, Device::OLED::OLED_6X8);
+    // // 显示数字
+    // oled.ShowNum(0, 28, 12345, 5, Device::OLED::OLED_6X8);
 
-    // 绘制图形
-    oled.DrawRectangle(70, 40, 30, 15, true); // 填充矩形
-    oled.DrawCircle(40, 40, 10, 0);              // 空心圆    // 更新显示
-    oled.Update();
+    // // 绘制图形
+    // oled.DrawRectangle(70, 40, 30, 15, true); // 填充矩形
+    // oled.DrawCircle(40, 40, 10, 0);              // 空心圆    // 更新显示
+    // oled.Update();
     while (1)
     {
         // for (size_t i = 0; i < 100; i++)

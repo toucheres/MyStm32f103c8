@@ -12,9 +12,7 @@
         }
     ],
     "clangd.arguments": [
-        "--compile-commands-dir=c:\\work\\stm32\\Arm_STD\\out\\Arm_STD\\STM32F103C8\\Debug",
-        "--compile-commands-dir=c:\\work\\stm32\\Arm_STD\\out\\Arm_STD\\STM32F103C8\\Release",
-        "--compile-commands-dir=c:\\work\\stm32\\Arm_STD\\out\\Arm_STD\\STM32F103C8\\Size"
+        "--compile-commands-dir=c:\\work\\stm32\\Arm_STD\\out\\Arm_STD\\STM32F103C8\\Debug"
     ],
     "files.associations": {
         "*.s": "plaintext",
