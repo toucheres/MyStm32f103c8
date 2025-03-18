@@ -14,6 +14,7 @@ timer3_fun
         // do something;
         static uint64_t flag = 0;
         static uint32_t times = 0;
+        times++;
         flag++;
         flag %= 100;
         if (times % 100 == 0)
@@ -37,7 +38,7 @@ int main(void)
     oled.Init();
     oled.Clear();
 
-    // 显示文本
+    // // 显示文本
     oled.ShowChar(0, 0, 'A', Device::OLED::OLED_6X8);
     oled.ShowString(16, 0, "new life", Device::OLED::OLED_8X16);
 
