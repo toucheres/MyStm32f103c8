@@ -2166,8 +2166,8 @@ void System::delay(time_us time)
     SysTick->CTRL = 0x00000004; // 关闭定时器
 }
 
-Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _ismultichannel, ADC_TypeDef *adc = ADC::ADCType::adc1)
-    : iscontinuous(_iscontinuous), ismultichannel(_ismultichannel)
+Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerType, ADC_TypeDef *adc)
+    : iscontinuous(_iscontinuous), num_channals(_num_channals)
 {
 
     /*
@@ -2194,11 +2194,11 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _ismultichannel, ADC_TypeDef *ad
     // GPIO_InitStruct.GPIO_Pin = GPIO_Pin_4;     //	|GPIO_Pin_5
     // GPIO_Init(GPIOA, &GPIO_InitStruct);        // 配置GPIO
 
-    ADC_InitStruct.ADC_ContinuousConvMode = static_cast<FunctionalState>( _iscontinuous; // 持续模式
+    ADC_InitStruct.ADC_ContinuousConvMode = static_cast<FunctionalState>(_iscontinuous); // 持续模式
     ADC_InitStruct.ADC_DataAlign = ADC_DataAlign_Right;              // 向右对齐模式
-    ADC_InitStruct.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // 不使用外部触发模式
+    ADC_InitStruct.ADC_ExternalTrigConv = triggerType;               // 不使用外部触发模式
     ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;                  // 独立ADC模式
-    ADC_InitStruct.ADC_NbrOfChannel = 1;                             // 总共两个通道
+    ADC_InitStruct.ADC_NbrOfChannel = _num_channals;                 // 总共N个通道
     ADC_InitStruct.ADC_ScanConvMode = DISABLE;                       // 使用扫描模式
     ADC_Init(ADC1, &ADC_InitStruct);
 

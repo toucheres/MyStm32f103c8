@@ -440,6 +440,14 @@ namespace Device
             constexpr static const uint8_t continuous = 1;
             constexpr static const uint8_t non_multichannel = 0;
             constexpr static const uint8_t multichannel = 1;
+            constexpr static const uint32_t T1_CC1 = ((uint32_t)0x00000000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T1_CC2 = ((uint32_t)0x00020000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T2_CC2 = ((uint32_t)0x00060000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T3_TRGO = ((uint32_t)0x00080000);            /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T4_CC4 = ((uint32_t)0x000A0000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t Ext_IT11_TIM8_TRGO = ((uint32_t)0x000C0000); /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T1_CC3 = ((uint32_t)0x00040000); /*!< For ADC1, ADC2 and ADC3 */
+            constexpr static const uint32_t None = ((uint32_t)0x000E0000);   /*!< For ADC1, ADC2 and ADC3 */
         };
         enum Channel
         {
@@ -463,8 +471,8 @@ namespace Device
             inline static ADC_TypeDef *const adc2 = ADC2;
         };
         uint8_t iscontinuous;
-        uint8_t ismultichannel;
-        ADC(uint8_t iscontinuous, uint8_t ismultichannel, ADC_TypeDef *adc);
+        uint8_t num_channals;
+        ADC(uint8_t iscontinuous, uint8_t num_channals, uint32_t triggerType, ADC_TypeDef *adc);
         void addChannal(uint8_t channal);
         uint16_t getChanbal(uint8_t channal);
     };
