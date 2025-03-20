@@ -24,6 +24,8 @@ project:
     - component: Keil::Device:StdPeriph Drivers:RCC
     - component: Keil::Device:StdPeriph Drivers:TIM
     - component: Keil::Device:StdPeriph Drivers:ADC
+    - component: Keil::Device:DMA
+    - component: ARM::CMSIS Driver:USART:Custom
 
   # List executable file formats to be generated.
   output:
@@ -32,3 +34,4 @@ project:
     #  - hex
   packs:
     - pack: Keil::STM32F1xx_DFP
+    - pack: ARM::CMSIS

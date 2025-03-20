@@ -1,8 +1,7 @@
 #ifndef _MYSTM32_H_
 #define _MYSTM32_H_
-
+#include "RTE_Components.h"
 #include "stm32f10x.h"
-#include "stm32f10x_rcc.h"
 #include <cstdint>
 extern "C"
 {

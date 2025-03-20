@@ -1,5 +1,5 @@
 #include "MyStm32.h"
-
+#include "stm32f10x_rcc.h"
 
 // Port类静态成员实现
 
