@@ -2167,7 +2167,7 @@ void System::delay(time_us time)
 }
 
 Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerType, ADC_TypeDef *adc)
-    : iscontinuous(_iscontinuous), num_channals(_num_channals)
+    : iscontinuous(_iscontinuous), num_channals(_num_channals),adcType(adc)
 {
 
     /*
@@ -2179,12 +2179,12 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerT
     */
     GPIO_InitTypeDef GPIO_InitStruct;
     ADC_InitTypeDef ADC_InitStruct;
-    ADC_DeInit(adc); // 将外设 ADC1 的全部寄存器重设为缺省值
+    ADC_DeInit(adcType); // 将外设 ADC1 的全部寄存器重设为缺省值
     // ADC1;                // APB2PERIPH_BASE + 0x2400
     // ADC2;                // APB2PERIPH_BASE + 0x2800
     // RCC_APB2Periph_ADC1; // 0x00000200
     // RCC_APB2Periph_ADC2; // uint32_t)0x00000400
-    auto rcc_adc = reinterpret_cast<uint32_t>(adc) - APB2PERIPH_BASE - 0x2200;
+    auto rcc_adc = reinterpret_cast<uint32_t>(adcType) - APB2PERIPH_BASE - 0x2200;
     RCC_APB2PeriphClockCmd(rcc_adc | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE); // 开启RCC时钟
 
     // 配置ADC时钟
@@ -2200,7 +2200,7 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerT
     ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;                  // 独立ADC模式
     ADC_InitStruct.ADC_NbrOfChannel = _num_channals;                 // 总共N个通道
     ADC_InitStruct.ADC_ScanConvMode = DISABLE;                       // 使用扫描模式
-    ADC_Init(ADC1, &ADC_InitStruct);
+    ADC_Init(adcType, &ADC_InitStruct);
 
     // 选择多路通道  ,配置在规则组菜单列表的第一个位置写入通道0，55.5个周期
     ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 1, ADC_SampleTime_55Cycles5);
@@ -2209,14 +2209,35 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerT
     // 开启ADC的DMA支持（要实现DMA功能，还需独立配置DMA通道等参数）
     //	ADC_DMACmd(ADC1, ENABLE);
 
-    ADC_Cmd(ADC1, ENABLE); // 使能指定的ADC1
+    ADC_Cmd(adcType, ENABLE); // 使能指定的ADC1
 
     // 校准
-    ADC_ResetCalibration(ADC1);
-    while (ADC_GetResetCalibrationStatus(ADC1) == SET)
+    ADC_ResetCalibration(adcType);
+    while (ADC_GetResetCalibrationStatus(adcType) == SET)
         ;
-    ADC_StartCalibration(ADC1);
-    while (ADC_GetCalibrationStatus(ADC1))
+    ADC_StartCalibration(adcType);
+    while (ADC_GetCalibrationStatus(adcType))
         ;
 };
 void Device::ADC::addChannal(uint8_t channal) {}
+
+uint16_t Device::ADC::getChannal(uint8_t channal)
+{
+    // 1. 配置ADC通道
+    ADC_RegularChannelConfig(ADC1, channal, 1, ADC_SampleTime_55Cycles5);
+
+    // 2. 启动ADC转换
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+
+    // 3. 等待转换完成
+    while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET)
+        ;
+
+    // 4. 获取ADC转换结果
+    uint16_t result = ADC_GetConversionValue(ADC1);
+
+    // 5. 清除EOC标志
+    ADC_ClearFlag(ADC1, ADC_FLAG_EOC);
+
+    return result;
+}

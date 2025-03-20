@@ -433,9 +433,9 @@ namespace Device
 
     class ADC
     {
-
-        class Mode
-        {
+    public:
+      class Mode {
+        public:
             constexpr static const uint8_t non_continuous = 0;
             constexpr static const uint8_t continuous = 1;
             constexpr static const uint8_t non_multichannel = 0;
@@ -472,9 +472,10 @@ namespace Device
         };
         uint8_t iscontinuous;
         uint8_t num_channals;
+        ADC_TypeDef * adcType;
         ADC(uint8_t iscontinuous, uint8_t num_channals, uint32_t triggerType, ADC_TypeDef *adc);
         void addChannal(uint8_t channal);
-        uint16_t getChanbal(uint8_t channal);
+        uint16_t getChannal(uint8_t channal);
     };
 
     class Bluetooth {
