@@ -52,28 +52,63 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerT
     while (ADC_GetCalibrationStatus(adcType))
         ;
 };
-void Device::ADC::addChannal(uint8_t channal) {}
+void Device::ADC::addChannal(uint8_t channal)
+{
+    ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_55Cycles5);
+
+    // 对于温度传感器需要特殊处理
+    if (channal == ADC_Channel_16)
+    {
+        // 使能内部温度传感器
+        ADC_TempSensorVrefintCmd(ENABLE);
+    }
+
+    // 开始连续转换（如果是连续模式）
+    if (iscontinuous)
+    {
+        ADC_SoftwareStartConvCmd(adcType, ENABLE);
+    }
+}
 
 uint16_t Device::ADC::getChannal(uint8_t channal)
 {
-    // 配置ADC转换通道
-    ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_55Cycles5);
+    // 如果不是连续模式，需要配置通道并启动转换
+    if (!iscontinuous)
+    {
+        // 配置ADC转换通道
+        ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_55Cycles5);
 
-    // 开始转换
-    ADC_SoftwareStartConvCmd(adcType, ENABLE);
+        // 开始转换
+        ADC_SoftwareStartConvCmd(adcType, ENABLE);
 
-    // 等待转换完成
-    while (ADC_GetFlagStatus(adcType, ADC_FLAG_EOC) == RESET)
-        ;
+        // 等待转换完成
+        while (ADC_GetFlagStatus(adcType, ADC_FLAG_EOC) == RESET)
+            ;
+
+        // 停止软件转换
+        ADC_SoftwareStartConvCmd(adcType, DISABLE);
+    }
+    else
+    {
+        // 连续模式下只需等待当前转换完成
+        while (ADC_GetFlagStatus(adcType, ADC_FLAG_EOC) == RESET)
+            ;
+    }
 
     // 获取转换结果
     uint16_t result = ADC_GetConversionValue(adcType);
 
-    // 如果不是连续模式，停止软件转换
-    if (!iscontinuous)
-    {
-        ADC_SoftwareStartConvCmd(adcType, DISABLE);
-    }
-
     return result;
+}
+
+float Device::ADC::convertToTemperature(uint16_t adcValue)
+{ // STM32F10x的温度传感器计算公式
+    // 根据参考手册：Temperature (in °C) = {(V25 - VSENSE) / Avg_Slope} + 25
+    // V25 = 1.43V，Avg_Slope = 4.3 mV/°C
+    // ADC值转换为电压: V = ADC值 * (3.3V / 4095)
+
+    float voltage = (float)adcValue * (3.3f / 4095.0f);
+    float temperature = ((1.43f - voltage) / 0.0043f) + 25.0f;
+
+    return temperature;
 }

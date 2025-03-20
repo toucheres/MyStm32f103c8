@@ -11,15 +11,28 @@ Device::ADC adc{
     Device::ADC::Mode::continuous, 1, Device::ADC::Mode::None, Device::ADC::ADCType::adc1};
 timer3_fun
 {
-    if (TIM_GetITStatus(TIM3, TIM_IT_Update) ==
-        SET) // 检查指定的TIM中断发生与否:TIM 中断源
+    if (TIM_GetITStatus(TIM3, TIM_IT_Update) == SET)
     {
         nums = adc.getChannal(Device::ADC::Channel16);
+
+        // 计算实际温度值
+        float temperature = adc.convertToTemperature(nums);
+
         oled.Clear();
-        oled.ShowNum(0, 0, nums, 5, Device::OLED::OLED_6X8);
+        // 显示ADC原始值
+        oled.ShowString(0, 0, "ADC:", Device::OLED::OLED_6X8);
+        oled.ShowNum(30, 0, nums, 5, Device::OLED::OLED_6X8);
+
+        // 显示温度值（整数部分）
+        oled.ShowString(0, 12, "Temp:", Device::OLED::OLED_6X8);
+        oled.ShowNum(30, 12, (uint16_t)temperature, 2, Device::OLED::OLED_6X8);
+        oled.ShowChar(45, 12, '.', Device::OLED::OLED_6X8);
+        // 显示温度值（小数部分）
+        oled.ShowNum(50, 12, (uint16_t)((temperature - (uint16_t)temperature) * 10), 1, Device::OLED::OLED_6X8);
+        oled.ShowChar(60, 12, 'C', Device::OLED::OLED_6X8);
+
         oled.Update();
-        TIM_ClearITPendingBit(TIM3,
-                              TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
+        TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
     }
 }
 int main(void)
@@ -31,7 +44,7 @@ int main(void)
     // // 创建并初始化OLED对象
     oled.Init();
     oled.Clear();
-    adc.addChannal(Device::ADC::Channel16);
+    adc.addChannal(Device::ADC::Channel16); //            Channel16 = ADC_Channel_16, // 内部温度传感器
     // // 显示文本
     // oled.ShowChar(0, 0, 'A', Device::OLED::OLED_6X8);
     // oled.ShowString(16, 0, "new life", Device::OLED::OLED_8X16);

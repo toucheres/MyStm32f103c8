@@ -476,6 +476,7 @@ namespace Device
         ADC(uint8_t iscontinuous, uint8_t num_channals, uint32_t triggerType, ADC_TypeDef *adc);
         void addChannal(uint8_t channal);
         uint16_t getChannal(uint8_t channal);
+        float convertToTemperature(uint16_t adcValue);
     };
 
     class Bluetooth {
@@ -498,54 +499,6 @@ namespace Device
         void exitATMode();      // 退出AT命令模式
         bool sendATCommand(const char* command, char* response, uint16_t timeout);
     };
-    // OLED_类声明 - C++风格接口封装
-    // class OLED_
-    // {
-    // private:
-    //     enum FontSize
-    //     {
-    //         FONT_6X8 = 6,
-    //         FONT_8X16 = 8
-    //     };
-
-    //     enum FillMode
-    //     {
-    //         UNFILLED = 0,
-    //         FILLED = 1
-    //     };
-
-    // public:
-    //     OLED_();
-    //     void Update();
-    //     void UpdateArea(int16_t x, int16_t y, uint8_t width, uint8_t height);
-    //     void Clear();
-    //     void ClearArea(int16_t x, int16_t y, uint8_t width, uint8_t height);
-    //     void Reverse();
-    //     void ReverseArea(int16_t x, int16_t y, uint8_t width, uint8_t height);
-    //     void ShowChar(int16_t x, int16_t y, char ch, uint8_t fontSize);
-    //     void ShowString(int16_t x, int16_t y, const char *str, uint8_t fontSize);
-    //     void ShowNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize);
-    //     void ShowSignedNum(int16_t x, int16_t y, int32_t number, uint8_t length, uint8_t fontSize);
-    //     void ShowHexNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize);
-    //     void ShowBinNum(int16_t x, int16_t y, uint32_t number, uint8_t length, uint8_t fontSize);
-    //     void ShowFloatNum(int16_t x, int16_t y, double number, uint8_t intLength,
-    //                       uint8_t fraLength, uint8_t fontSize);
-    //     void ShowImage(int16_t x, int16_t y, uint8_t width, uint8_t height, const uint8_t *image);
-    //     void Printf(int16_t x, int16_t y, uint8_t fontSize, const char *format, ...);
-    //     void DrawPoint(int16_t x, int16_t y);
-    //     bool GetPoint(int16_t x, int16_t y);
-    //     void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
-    //     void DrawRectangle(int16_t x, int16_t y, uint8_t width, uint8_t height, bool filled = false);
-    //     void DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
-    //                       int16_t x2, int16_t y2, bool filled = false);
-    //     void DrawCircle(int16_t x, int16_t y, uint8_t radius, bool filled = false);
-    //     void DrawEllipse(int16_t x, int16_t y, uint8_t a, uint8_t b, bool filled = false);
-    //     void DrawArc(int16_t x, int16_t y, uint8_t radius,
-    //                  int16_t startAngle, int16_t endAngle, bool filled = false);
-
-    //     static constexpr uint8_t FONT_SIZE_6X8 = OLED_6X8;
-    //     static constexpr uint8_t FONT_SIZE_8X16 = OLED_8X16;
-    // };
 } // namespace Device
 
 namespace System
