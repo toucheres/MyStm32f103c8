@@ -5,8 +5,12 @@ project:
     - group: Source Files
       files:
         - file: ./main.cpp
-        - file: OLED_Data.c
+        - file: ./OLED_Data.c
         - file: ./MyStm32.cpp
+        - file: ./Timer.cpp
+        - file: ./ADC.cpp
+        - file: ./OLED.cpp
+        - file: ./PWM.cpp
         # - file: ./MyStm32.cpp
 
         # List components to use for your application.
