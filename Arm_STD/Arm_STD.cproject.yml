@@ -11,6 +11,7 @@ project:
         - file: ./ADC.cpp
         - file: ./OLED.cpp
         - file: ./PWM.cpp
+        - file: ./Bluetooth.cpp
         # - file: ./MyStm32.cpp
 
         # List components to use for your application.
@@ -26,6 +27,7 @@ project:
     - component: Keil::Device:StdPeriph Drivers:ADC
     - component: Keil::Device:DMA
     - component: ARM::CMSIS Driver:USART:Custom
+    - component: Keil::Device:StdPeriph Drivers:USART
 
   # List executable file formats to be generated.
   output:
