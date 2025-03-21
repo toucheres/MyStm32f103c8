@@ -12,6 +12,7 @@ extern "C" {
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
 #define timer3_fun extern "C" void TIM3_IRQHandler(void)
 #define timer4_fun extern "C" void TIM4_IRQHandler(void)
+#define USART1_fun extern "C" void USART1_IRQHandler(void)
 
 // Port类声明
 class Port
@@ -500,8 +501,8 @@ namespace Device
     };
 } // namespace Device
 
-namespace System
-{
+namespace System {
+// TODO有bug，暂停使用
     void delay(time_ms);
     void delay(time_us);
     void delay(time_s);

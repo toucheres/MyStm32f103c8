@@ -4,6 +4,7 @@
 #include "MyStm32.h"
 
 // 只保留必要的组件
+Device::LED led{Port::A,Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 // 添加蓝牙对象 - 使用USART1，波特率9600
 Device::Bluetooth bluetooth{USART1, 9600};
@@ -16,7 +17,7 @@ char recv_buffer[16] = {0};
 bool new_data_received = false;
 
 // 修改USART1_IRQHandler中断函数，更新蓝牙对象的接收缓冲区
-extern "C" void USART1_IRQHandler(void)
+USART1_fun
 {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
@@ -60,7 +61,6 @@ int main(void) {
     oled.Clear();
     oled.ShowString(0, 0, "Starting...", Device::OLED::OLED_8X16);
     oled.Update();
-    
     // 使用简单循环延时替代System::delay
     for(volatile uint32_t i = 0; i < 1000000; i++);
     
