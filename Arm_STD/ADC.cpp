@@ -54,13 +54,15 @@ Device::ADC::ADC(uint8_t _iscontinuous, uint8_t _num_channals, uint32_t triggerT
 };
 void Device::ADC::addChannal(uint8_t channal)
 {
-    ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_55Cycles5);
+  // ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_55Cycles5);
+  // 使用最长的采样时间以提高精度
+  ADC_RegularChannelConfig(adcType, channal, 1, ADC_SampleTime_239Cycles5);
 
-    // 对于温度传感器需要特殊处理
-    if (channal == ADC_Channel_16)
-    {
-        // 使能内部温度传感器
-        ADC_TempSensorVrefintCmd(ENABLE);
+  // 对于温度传感器需要特殊处理
+  if (channal == ADC_Channel_16)
+  {
+      // 使能内部温度传感器
+      ADC_TempSensorVrefintCmd(ENABLE);
     }
 
     // 开始连续转换（如果是连续模式）
@@ -90,9 +92,13 @@ uint16_t Device::ADC::getChannal(uint8_t channal)
     }
     else
     {
-        // 连续模式下只需等待当前转换完成
-        while (ADC_GetFlagStatus(adcType, ADC_FLAG_EOC) == RESET)
-            ;
+        // 连续模式下不等待标志位，直接读取当前值
+        // 或者添加超时机制避免死循环
+        uint32_t timeout = 0;
+        while (ADC_GetFlagStatus(adcType, ADC_FLAG_EOC) == RESET && timeout < 10000)
+        {
+            timeout++;
+        }
     }
 
     // 获取转换结果
@@ -102,12 +108,27 @@ uint16_t Device::ADC::getChannal(uint8_t channal)
 }
 
 float Device::ADC::convertToTemperature(uint16_t adcValue)
-{ // STM32F10x的温度传感器计算公式
-    // 根据参考手册：Temperature (in °C) = {(V25 - VSENSE) / Avg_Slope} + 25
-    // V25 = 1.43V，Avg_Slope = 4.3 mV/°C
-    // ADC值转换为电压: V = ADC值 * (3.3V / 4095)
+{
+    // 使用静态变量存储最近的几次读数
+    static uint16_t adcBuffer[8] = {0};
+    static uint8_t bufferIndex = 0;
 
-    float voltage = (float)adcValue * (3.3f / 4095.0f);
+    // 更新缓冲区
+    adcBuffer[bufferIndex] = adcValue;
+    bufferIndex = (bufferIndex + 1) % 8;
+
+    // 计算平均值
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        sum += adcBuffer[i];
+    }
+    uint16_t avgAdc = sum / 8;
+
+    // 按照STM32标准数据手册提供的计算方法
+    float voltage = (static_cast<float>(avgAdc) * 3.3f) / 4096.0f;
+
+    // 使用STM32F103的典型值: V25=1.43V, Avg_Slope=4.3mV/°C
     float temperature = ((1.43f - voltage) / 0.0043f) + 25.0f;
 
     return temperature;

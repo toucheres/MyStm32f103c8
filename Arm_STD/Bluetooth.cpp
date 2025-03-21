@@ -1,4 +1,5 @@
 #include "MyStm32.h"
+#include "stm32f10x_usart.h"
 namespace Device {
 
 // 构造函数初始化成员变量

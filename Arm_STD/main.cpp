@@ -7,8 +7,7 @@ Device::Timer::Universal_timer timer{Device::Timer::Universal_timer::TimerType::
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::PWM pwm{Device::Timer::Universal_timer::TimerType::timer_2, Device::Timer::Channal::ChannalType::channal_1};
 uint16_t nums = 0;
-Device::ADC adc{
-    Device::ADC::Mode::continuous, 1, Device::ADC::Mode::None, Device::ADC::ADCType::adc1};
+Device::ADC adc{Device::ADC::Mode::continuous, 1, Device::ADC::Mode::None, Device::ADC::ADCType::adc1};
 timer3_fun
 {
     if (TIM_GetITStatus(TIM3, TIM_IT_Update) == SET)
@@ -25,11 +24,11 @@ timer3_fun
 
         // 显示温度值（整数部分）
         oled.ShowString(0, 12, "Temp:", Device::OLED::OLED_6X8);
-        oled.ShowNum(30, 12, (uint16_t)temperature, 2, Device::OLED::OLED_6X8);
-        oled.ShowChar(45, 12, '.', Device::OLED::OLED_6X8);
+        oled.ShowNum(30, 12, (uint16_t)temperature, 4, Device::OLED::OLED_6X8);
+        oled.ShowChar(60, 12, '.', Device::OLED::OLED_6X8);
         // 显示温度值（小数部分）
-        oled.ShowNum(50, 12, (uint16_t)((temperature - (uint16_t)temperature) * 10), 1, Device::OLED::OLED_6X8);
-        oled.ShowChar(60, 12, 'C', Device::OLED::OLED_6X8);
+        oled.ShowNum(65, 12, (uint16_t)((temperature - (uint16_t)temperature) * 10), 1, Device::OLED::OLED_6X8);
+        oled.ShowChar(75, 12, 'C', Device::OLED::OLED_6X8);
 
         oled.Update();
         TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
