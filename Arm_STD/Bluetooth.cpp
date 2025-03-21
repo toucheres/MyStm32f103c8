@@ -138,7 +138,41 @@ uint8_t Bluetooth::receiveByte() {
     // 返回接收到的数据
     return USART_ReceiveData(USARTx);
 }
+// 在Bluetooth.cpp中添加
+void Device::Bluetooth::handleInterrupt()
+{
+    if (USART_GetITStatus(USARTx, USART_IT_RXNE) != RESET)
+    {
+        // 清除中断标志
+        USART_ClearITPendingBit(USARTx, USART_IT_RXNE);
 
+        // 接收数据
+        uint8_t data = USART_ReceiveData(USARTx);
+
+        // 回显接收到的字符（便于调试）
+        USART_SendData(USARTx, data);
+
+        // 处理接收到的数据
+        static uint8_t pos = 0;
+
+        if (data == '\r' || data == '\n')
+        {
+            // 只有缓冲区中有实际数据时才视为命令完成
+            if (pos > 0)
+            {
+                rxBuffer[pos] = 0;
+                pos = 0;
+                hasNewData = true;
+            }
+            // 如果是空命令，直接忽略
+        }
+        else if (pos < 15)
+        {
+            rxBuffer[pos++] = data;
+            rxBuffer[pos] = 0;
+        }
+    }
+}
 // 接收数据块
 void Bluetooth::receiveData(uint8_t* buffer, uint16_t len) {
     // 如果缓冲区中有足够的数据

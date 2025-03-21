@@ -481,21 +481,39 @@ namespace Device
     private:
         USART_TypeDef* USARTx;
         uint32_t baudRate;
-        uint8_t rxBuffer[128];  // 接收缓冲区
-        uint16_t rxIndex;       // 接收索引
+        uint8_t rxIndex;
         
     public:
-        Bluetooth(USART_TypeDef* _usart = USART1, uint32_t _baudRate = 9600);
+        // 构造函数
+        Bluetooth(USART_TypeDef* _usart, uint32_t _baudRate);
+        
+        // 初始化函数
         void init();
+        
+        // 发送函数
         void sendByte(uint8_t byte);
         void sendData(uint8_t* data, uint16_t len);
         void sendString(const char* str);
+
         bool isDataAvailable();
+
         uint8_t receiveByte();
-        void receiveData(uint8_t* buffer, uint16_t len);
-        void enterATMode();     // 进入AT命令模式
-        void exitATMode();      // 退出AT命令模式
-        bool sendATCommand(const char* command, char* response, uint16_t timeout);
+
+        void receiveData(uint8_t *buffer, uint16_t len);
+
+        void enterATMode();
+
+        void exitATMode();
+
+        bool sendATCommand(const char *command, char *response,
+                           uint16_t timeout);
+
+        // 新增：中断处理函数
+        void handleInterrupt();
+        
+        // 新增：接收缓冲区
+        char rxBuffer[16] = {0};
+        bool hasNewData = false;
     };
 } // namespace Device
 
