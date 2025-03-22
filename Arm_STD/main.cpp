@@ -3,10 +3,8 @@
 #include CMSIS_device_header
 #include "MyStm32.h"
 
-// 只保留必要的组件
-Device::LED led{Port::A,Pin::Pin0};
+Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
-// 添加蓝牙对象 - 使用USART1，波特率9600
 Device::Bluetooth bluetooth{USART1, 9600};
 
 // 在main.cpp中修改中断处理函数
@@ -57,28 +55,46 @@ int main(void)
         {
             oled.Clear();
             oled.ShowString(0, 0, "Received:", Device::OLED::OLED_6X8);
-            oled.ShowString(0, 16, bluetooth.rxBuffer, Device::OLED::OLED_8X16);
+            oled.ShowString(0, 16, bluetooth.getBuffer(), Device::OLED::OLED_8X16);
+            
+            // 添加调试信息，显示命令的十六进制值
+            char debug_str[64];
+            sprintf(debug_str, "Len:%d", strlen(bluetooth.getBuffer()));
+            oled.ShowString(0, 32, debug_str, Device::OLED::OLED_6X8);
+            
             oled.Update();
 
             // 发送确认消息
-            bluetooth.sendString("Received: ");
-            bluetooth.sendString(bluetooth.rxBuffer);
-            bluetooth.sendString("\r\n");
+            bluetooth.sendString("Received: \"");
+            bluetooth.sendString(bluetooth.getBuffer());
+            bluetooth.sendString("\"\r\n");
 
-            // 处理命令
-            if (strcmp(bluetooth.rxBuffer, "LED ON") == 0)
+            // 使用更灵活的命令比较方式
+            if (strcmp(bluetooth.getBuffer(), "Clear") == 0)
             {
-                bluetooth.sendString("Command: LED ON\r\n");
-                // LED处理代码
+                bluetooth.sendString("Command: Clear executed\r\n");
+                bluetooth.clear();
+                
+                // 确认命令执行的视觉反馈
+                oled.Clear();
+                oled.ShowString(0, 0, "Clear command", Device::OLED::OLED_8X16);
+                oled.ShowString(0, 16, "executed!", Device::OLED::OLED_8X16);
+                oled.Update();
+                //System::delay(500_ms);
             }
-            else if (strcmp(bluetooth.rxBuffer, "LED OFF") == 0)
+            else if (strcasecmp(bluetooth.getBuffer(), "LED OFF") == 0)
             {
                 bluetooth.sendString("Command: LED OFF\r\n");
                 // LED处理代码
             }
+            else
+            {
+                // 未知命令处理
+                bluetooth.sendString("Unknown command\r\n");
+            }
 
-            // 重置标志
-            bluetooth.hasNewData = false;
+            // 重置标志并清空缓冲区，准备接收下一条命令
+            bluetooth.clear();
         }
     }
 }

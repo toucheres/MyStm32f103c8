@@ -2,10 +2,17 @@
 #define _MYSTM32_H_
 #include "stm32f10x.h"
 #include <cstdint>
-extern "C" {
+extern "C"
+{
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 }
+
+// 如果平台不支持strcasecmp，添加自定义实现
+// #ifndef strcasecmp
+// int strcasecmp(const char *s1, const char *s2);
+// #endif
 
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
 #define timer3_fun extern "C" void TIM3_IRQHandler(void)
@@ -432,7 +439,8 @@ namespace Device
     class ADC
     {
     public:
-      class Mode {
+        class Mode
+        {
         public:
             constexpr static const uint8_t non_continuous = 0;
             constexpr static const uint8_t continuous = 1;
@@ -444,8 +452,8 @@ namespace Device
             constexpr static const uint32_t T3_TRGO = ((uint32_t)0x00080000);            /*!< For ADC1 and ADC2 */
             constexpr static const uint32_t T4_CC4 = ((uint32_t)0x000A0000);             /*!< For ADC1 and ADC2 */
             constexpr static const uint32_t Ext_IT11_TIM8_TRGO = ((uint32_t)0x000C0000); /*!< For ADC1 and ADC2 */
-            constexpr static const uint32_t T1_CC3 = ((uint32_t)0x00040000); /*!< For ADC1, ADC2 and ADC3 */
-            constexpr static const uint32_t None = ((uint32_t)0x000E0000);   /*!< For ADC1, ADC2 and ADC3 */
+            constexpr static const uint32_t T1_CC3 = ((uint32_t)0x00040000);             /*!< For ADC1, ADC2 and ADC3 */
+            constexpr static const uint32_t None = ((uint32_t)0x000E0000);               /*!< For ADC1, ADC2 and ADC3 */
         };
         enum Channel
         {
@@ -470,55 +478,74 @@ namespace Device
         };
         uint8_t iscontinuous;
         uint8_t num_channals;
-        ADC_TypeDef * adcType;
+        ADC_TypeDef *adcType;
         ADC(uint8_t iscontinuous, uint8_t num_channals, uint32_t triggerType, ADC_TypeDef *adc);
         void addChannal(uint8_t channal);
         uint16_t getChannal(uint8_t channal);
         float convertToTemperature(uint16_t adcValue);
     };
 
-    class Bluetooth {
+    class Bluetooth
+    {
     private:
-        USART_TypeDef* USARTx;
+        USART_TypeDef *USARTx;
         uint32_t baudRate;
-        uint8_t rxIndex;
+        uint16_t rxIndex;
         
+        // 帮助函数，处理接收到的字符
+        void processReceivedChar(uint8_t data);
+
     public:
         // 构造函数
-        Bluetooth(USART_TypeDef* _usart, uint32_t _baudRate);
-        
+        Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate);
+
         // 初始化函数
         void init();
-        
+
         // 发送函数
         void sendByte(uint8_t byte);
-        void sendData(uint8_t* data, uint16_t len);
-        void sendString(const char* str);
+        void sendData(uint8_t *data, uint16_t len);
+        void sendString(const char *str);
 
         bool isDataAvailable();
 
         uint8_t receiveByte();
 
         void receiveData(uint8_t *buffer, uint16_t len);
-
+        
+        // 获取最后接收的完整行数据
+        char *getLastData();
+        // void clear();
+        // 获取接收缓冲区内容
+        const char* getBuffer() const;
+        
+        // 获取当前接收缓冲区长度
+        uint16_t getBufferLength() const;
+        
         void enterATMode();
-
+        uint8_t getNum();
         void exitATMode();
 
-        bool sendATCommand(const char *command, char *response,
-                           uint16_t timeout);
-
-        // 新增：中断处理函数
-        void handleInterrupt();
+        // 获取当前缓冲区内数据的数量
+        uint16_t getNum() const;
         
-        // 新增：接收缓冲区
-        char rxBuffer[16] = {0};
-        bool hasNewData = false;
+        // 清空缓冲区
+        void clear();
+
+        bool sendATCommand(const char *command, char *response, uint16_t timeout);
+
+        // 中断处理函数
+        void handleInterrupt();
+
+        // 接收缓冲区，增大到64字节
+        char rxBuffer[64];
+        bool hasNewData;
     };
 } // namespace Device
 
-namespace System {
-// TODO有bug，暂停使用
+namespace System
+{
+    // TODO有bug，暂停使用
     void delay(time_ms);
     void delay(time_us);
     void delay(time_s);
