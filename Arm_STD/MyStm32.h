@@ -6,7 +6,6 @@ extern "C"
 {
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
 }
 
 // 如果平台不支持strcasecmp，添加自定义实现
@@ -540,6 +539,9 @@ namespace Device
         // 接收缓冲区，增大到64字节
         char rxBuffer[64];
         bool hasNewData;
+
+        // 添加格式化输出方法
+        void printf(const char *fmt, ...);
     };
 } // namespace Device
 

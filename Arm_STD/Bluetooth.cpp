@@ -1,5 +1,7 @@
 #include "MyStm32.h"
 #include "stm32f10x_usart.h"
+#include <stdarg.h>
+
 namespace Device
 {
 
@@ -359,6 +361,20 @@ namespace Device
         rxIndex = 0;
         rxBuffer[0] = 0;
         hasNewData = false;
+    }
+
+    // 实现格式化输出方法
+    void Bluetooth::printf(const char *fmt, ...)
+    {
+        char buffer[64]; // 定义一个较大的缓冲区用于格式化
+        va_list args;
+        
+        va_start(args, fmt);
+        vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+        
+        // 发送格式化后的字符串
+        sendString(buffer);
     }
 
     // USART中断处理函数应该在外部定义，例如在main.cpp中

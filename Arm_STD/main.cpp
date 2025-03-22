@@ -64,15 +64,15 @@ int main(void)
             
             oled.Update();
 
-            // 发送确认消息
-            bluetooth.sendString("Received: \"");
-            bluetooth.sendString(bluetooth.getBuffer());
-            bluetooth.sendString("\"\r\n");
+            // 使用format方法发送确认消息
+            bluetooth.printf("Received: \"%s\" (length: %d)\r\n", 
+                            bluetooth.getBuffer(), 
+                            strlen(bluetooth.getBuffer()));
 
             // 使用更灵活的命令比较方式
             if (strcmp(bluetooth.getBuffer(), "Clear") == 0)
             {
-                bluetooth.sendString("Command: Clear executed\r\n");
+                bluetooth.printf("Command: Clear executed at count %lu\r\n", counter);
                 bluetooth.clear();
                 
                 // 确认命令执行的视觉反馈
@@ -80,7 +80,6 @@ int main(void)
                 oled.ShowString(0, 0, "Clear command", Device::OLED::OLED_8X16);
                 oled.ShowString(0, 16, "executed!", Device::OLED::OLED_8X16);
                 oled.Update();
-                //System::delay(500_ms);
             }
             else if (strcasecmp(bluetooth.getBuffer(), "LED OFF") == 0)
             {
