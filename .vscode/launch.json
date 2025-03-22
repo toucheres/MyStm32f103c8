@@ -4,7 +4,21 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "./out/Arm_STD/STM32F103C8/Debug/Arm_STD.axf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "svdFile": "C:/Users/asus/AppData/Local/arm/packs/Keil/STM32F1xx_DFP/2.4.1/SVD/STM32F103xx.svd",
+            "armToolchainPath": "C:/work/arm_stm32/14.2 rel1/bin"
+        },
         {
             "name": "Arm Debugger",
             "type": "arm-debugger",
