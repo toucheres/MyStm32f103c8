@@ -6,8 +6,8 @@ namespace Device
 {
 
     // 构造函数初始化成员变量
-    Bluetooth::Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate)
-        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false)
+    Bluetooth::Bluetooth(USART_TypeDef *_usart, bool _autoHand = true, uint32_t _baudRate = 9600)
+        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false), autoHand(_autoHand)
     {
         // 清空接收缓冲区
         for (uint16_t i = 0; i < sizeof(rxBuffer); i++)
@@ -172,22 +172,28 @@ namespace Device
             {
                 // 确保字符串以0结尾
                 rxBuffer[this->rxIndex] = 0;
-                
+
                 // 移除末尾可能的回车换行符
-                while (rxIndex > 0 && (rxBuffer[rxIndex-1] == '\r' || rxBuffer[rxIndex-1] == '\n'))
+                while (rxIndex > 0 && (rxBuffer[rxIndex - 1] == '\r' || rxBuffer[rxIndex - 1] == '\n'))
                 {
                     rxBuffer[--rxIndex] = 0;
                 }
-                
+
                 hasNewData = true;
+                if (autoHand)
+                {
+                    callback(this);
+                    hasNewData = false;
+                    this->clear();
+                }
             }
             // 如果是空命令，直接忽略
         }
-        else if (this->rxIndex < sizeof(rxBuffer) - 1)  // 留出一个字节给字符串结束符
+        else if (this->rxIndex < sizeof(rxBuffer) - 1) // 留出一个字节给字符串结束符
         {
             // 存储收到的字符
             rxBuffer[this->rxIndex++] = data;
-            rxBuffer[this->rxIndex] = 0;  // 始终确保字符串以0结尾
+            rxBuffer[this->rxIndex] = 0; // 始终确保字符串以0结尾
         }
     }
 
@@ -211,7 +217,7 @@ namespace Device
 
             // 更新接收索引
             rxIndex -= len;
-            
+
             // 确保结束符
             rxBuffer[rxIndex] = 0;
         }
@@ -245,7 +251,7 @@ namespace Device
 
         // 确保字符串正确终止
         rxBuffer[rxIndex] = 0;
-        
+
         // 直接返回缓冲区指针，调用方负责处理数据
         return rxBuffer;
     }
@@ -338,7 +344,7 @@ namespace Device
     }
 
     // 获取缓冲区内容
-    const char* Bluetooth::getBuffer() const
+    const char *Bluetooth::getBuffer() const
     {
         return rxBuffer;
     }
@@ -368,11 +374,11 @@ namespace Device
     {
         char buffer[64]; // 定义一个较大的缓冲区用于格式化
         va_list args;
-        
+
         va_start(args, fmt);
         vsnprintf(buffer, sizeof(buffer), fmt, args);
         va_end(args);
-        
+
         // 发送格式化后的字符串
         sendString(buffer);
     }
