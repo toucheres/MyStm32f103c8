@@ -386,20 +386,4 @@ namespace Device
         // 发送格式化后的字符串
         sendString(buffer);
     }
-
-    // USART中断处理函数应该在外部定义，例如在main.cpp中
-    // 对于USART1中断处理程序如下：/*
-    // extern "C" void USART1_IRQHandler(void) {
-    //     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
-    //         // 清除中断标志
-    //         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-
-    //         // 获取接收到的数据
-    //         uint8_t data = USART_ReceiveData(USART1);
-
-    //         // 需要一个全局的Bluetooth对象来存储数据
-    //         // 例如：globalBluetoothObject->rxBuffer[globalBluetoothObject->rxIndex++] = data;
-    //     }
-    // }
-
 } // namespace Device

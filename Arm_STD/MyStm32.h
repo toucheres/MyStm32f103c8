@@ -272,9 +272,9 @@ public:
 };
 
 // 运算符重载函数声明
-inline constexpr time_s operator"" _us(unsigned long long _val)
+inline constexpr time_us operator"" _us(unsigned long long _val)
 {
-    return time_s{static_cast<uint16_t>(_val)};
+    return time_us{static_cast<uint16_t>(_val)};
 }
 inline constexpr time_ms operator"" _ms(unsigned long long _val)
 {
