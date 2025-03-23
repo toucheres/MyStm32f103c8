@@ -1,102 +1,90 @@
+#ifndef _MYSTM32_H_
+#define _MYSTM32_H_
 #include "stm32f10x.h"
-// #include <vector>
+#include <cstddef>
+#include <cstdint>
+extern "C"
+{
+#include <math.h>
+#include <stdio.h>
+}
+
+// 如果平台不支持strcasecmp，添加自定义实现
+// #ifndef strcasecmp
+// int strcasecmp(const char *s1, const char *s2);
+// #endif
+
+#define timer2_fun extern "C" void TIM2_IRQHandler(void)
+#define timer3_fun extern "C" void TIM3_IRQHandler(void)
+#define timer4_fun extern "C" void TIM4_IRQHandler(void)
+#define USART1_fun extern "C" void USART1_IRQHandler(void)
+
+// Port类声明
 class Port
 {
 public:
-    static GPIO_TypeDef *PortA;
-    static GPIO_TypeDef *PortB;
-    static GPIO_TypeDef *PortC;
-    static GPIO_TypeDef *PortD;
-    static GPIO_TypeDef *PortE;
-    static GPIO_TypeDef *PortF;
-    static GPIO_TypeDef *PortG;
+    inline static GPIO_TypeDef *const A = GPIOA;
+    inline static GPIO_TypeDef *const B = GPIOB;
+    inline static GPIO_TypeDef *const C = GPIOC;
 };
-GPIO_TypeDef *Port::PortA = GPIOA;
-GPIO_TypeDef *Port::PortB = GPIOB;
-GPIO_TypeDef *Port::PortC = GPIOC;
-GPIO_TypeDef *Port::PortD = GPIOD;
-GPIO_TypeDef *Port::PortE = GPIOE;
-GPIO_TypeDef *Port::PortF = GPIOF;
-GPIO_TypeDef *Port::PortG = GPIOG;
+
+// Pin类声明
 class Pin
 {
 public:
-    static const uint16_t Pin0 = GPIO_Pin_0;
-    static const uint16_t Pin1 = GPIO_Pin_1;
-    static const uint16_t Pin2 = GPIO_Pin_2;
-    static const uint16_t Pin3 = GPIO_Pin_3;
-    static const uint16_t Pin4 = GPIO_Pin_4;
-    static const uint16_t Pin5 = GPIO_Pin_5;
-    static const uint16_t Pin6 = GPIO_Pin_6;
-    static const uint16_t Pin7 = GPIO_Pin_7;
-    static const uint16_t Pin8 = GPIO_Pin_8;
-    static const uint16_t Pin9 = GPIO_Pin_9;
-    static const uint16_t Pin10 = GPIO_Pin_10;
-    static const uint16_t Pin11 = GPIO_Pin_11;
-    static const uint16_t Pin12 = GPIO_Pin_12;
-    static const uint16_t Pin13 = GPIO_Pin_13;
-    static const uint16_t Pin14 = GPIO_Pin_14;
-    static const uint16_t Pin15 = GPIO_Pin_15;
+    constexpr static const uint16_t Pin0 = GPIO_Pin_0;
+    constexpr static const uint16_t Pin1 = GPIO_Pin_1;
+    constexpr static const uint16_t Pin2 = GPIO_Pin_2;
+    constexpr static const uint16_t Pin3 = GPIO_Pin_3;
+    constexpr static const uint16_t Pin4 = GPIO_Pin_4;
+    constexpr static const uint16_t Pin5 = GPIO_Pin_5;
+    constexpr static const uint16_t Pin6 = GPIO_Pin_6;
+    constexpr static const uint16_t Pin7 = GPIO_Pin_7;
+    constexpr static const uint16_t Pin8 = GPIO_Pin_8;
+    constexpr static const uint16_t Pin9 = GPIO_Pin_9;
+    constexpr static const uint16_t Pin10 = GPIO_Pin_10;
+    constexpr static const uint16_t Pin11 = GPIO_Pin_11;
+    constexpr static const uint16_t Pin12 = GPIO_Pin_12;
+    constexpr static const uint16_t Pin13 = GPIO_Pin_13;
+    constexpr static const uint16_t Pin14 = GPIO_Pin_14;
+    constexpr static const uint16_t Pin15 = GPIO_Pin_15;
 };
+
+// IOMode类声明
 class IOMode
 {
 public:
-    static const GPIOMode_TypeDef AIN = GPIO_Mode_AIN;
-    static const GPIOMode_TypeDef IN_FLOATING = GPIO_Mode_IN_FLOATING;
-    static const GPIOMode_TypeDef IPD = GPIO_Mode_IPD;
-    static const GPIOMode_TypeDef IPU = GPIO_Mode_IPU;
-    static const GPIOMode_TypeDef Out_OD = GPIO_Mode_Out_OD;
-    static const GPIOMode_TypeDef Out_PP = GPIO_Mode_Out_PP;
-    static const GPIOMode_TypeDef AF_OD = GPIO_Mode_AF_OD;
-    static const GPIOMode_TypeDef AF_PP = GPIO_Mode_AF_PP;
+    constexpr static const GPIOMode_TypeDef AIN = GPIO_Mode_AIN;
+    constexpr static const GPIOMode_TypeDef IN_FLOATING = GPIO_Mode_IN_FLOATING;
+    constexpr static const GPIOMode_TypeDef IPD = GPIO_Mode_IPD;
+    constexpr static const GPIOMode_TypeDef IPU = GPIO_Mode_IPU;
+    constexpr static const GPIOMode_TypeDef Out_OD = GPIO_Mode_Out_OD;
+    constexpr static const GPIOMode_TypeDef Out_PP = GPIO_Mode_Out_PP;
+    constexpr static const GPIOMode_TypeDef AF_OD = GPIO_Mode_AF_OD;
+    constexpr static const GPIOMode_TypeDef AF_PP = GPIO_Mode_AF_PP;
 };
+
+// IOSpeed类声明
 class IOSpeed
 {
 public:
-    static const GPIOSpeed_TypeDef _50MHz = GPIO_Speed_50MHz;
-    static const GPIOSpeed_TypeDef _2MHz = GPIO_Speed_2MHz;
-    static const GPIOSpeed_TypeDef _10MHz = GPIO_Speed_10MHz;
+    constexpr static const GPIOSpeed_TypeDef _50MHz = GPIO_Speed_50MHz;
+    constexpr static const GPIOSpeed_TypeDef _2MHz = GPIO_Speed_2MHz;
+    constexpr static const GPIOSpeed_TypeDef _10MHz = GPIO_Speed_10MHz;
 };
-// 前向声明
-// IO类 - 零内存开销设计
+
+// IO类声明
 class IO
 {
     static uint16_t used[3];
-    // IO()=default;
-public:
-    static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin)
-    {
-        int index = 0;
-        if (_port == Port::PortA)
-            index = 0;
-        else if (_port == Port::PortB)
-            index = 1;
-        else if (_port == Port::PortC)
-            index = 2;
-        else if (_port == Port::PortD)
-            index = 3;
-        if (used[index] & _pin)
-        {
-            return false;
-        }
-        else
-        {
-            used[index] &= _pin;
-            return true;
-        }
-    }
 
-    class
+public:
+    // static bool sign(const GPIO_TypeDef *_port, const uint16_t _pin);
+
+    class InitHelper // 添加名称替代匿名类
     {
         GPIO_TypeDef *port;
-        static void doInitPin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode)
-        {
-            GPIO_InitTypeDef GPIO_InitStructure;
-            GPIO_InitStructure.GPIO_Pin = pin;
-            GPIO_InitStructure.GPIO_Mode = mode;
-            GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-            GPIO_Init(port, &GPIO_InitStructure);
-        }
+        static void doInitPin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode);
 
     public:
         class Port_Init
@@ -105,38 +93,34 @@ public:
 
         public:
             Port_Init(GPIO_TypeDef *_port) : port(_port) {}
-            void Pin0(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_0, mode); }
-            void Pin1(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_1, mode); }
-            void Pin2(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_2, mode); }
-            void Pin3(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_3, mode); }
-            void Pin4(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_4, mode); }
-            void Pin5(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_5, mode); }
-            void Pin6(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_6, mode); }
-            void Pin7(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_7, mode); }
-            void Pin8(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_8, mode); }
-            void Pin9(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_9, mode); }
-            void Pin10(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_10, mode); }
-            void Pin11(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_11, mode); }
-            void Pin12(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_12, mode); }
-            void Pin13(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_13, mode); }
-            void Pin14(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_14, mode); }
-            void Pin15(GPIOMode_TypeDef mode) const { doInitPin(port, GPIO_Pin_15, mode); }
+            void Pin0(GPIOMode_TypeDef mode) const;
+            void Pin1(GPIOMode_TypeDef mode) const;
+            void Pin2(GPIOMode_TypeDef mode) const;
+            void Pin3(GPIOMode_TypeDef mode) const;
+            void Pin4(GPIOMode_TypeDef mode) const;
+            void Pin5(GPIOMode_TypeDef mode) const;
+            void Pin6(GPIOMode_TypeDef mode) const;
+            void Pin7(GPIOMode_TypeDef mode) const;
+            void Pin8(GPIOMode_TypeDef mode) const;
+            void Pin9(GPIOMode_TypeDef mode) const;
+            void Pin10(GPIOMode_TypeDef mode) const;
+            void Pin11(GPIOMode_TypeDef mode) const;
+            void Pin12(GPIOMode_TypeDef mode) const;
+            void Pin13(GPIOMode_TypeDef mode) const;
+            void Pin14(GPIOMode_TypeDef mode) const;
+            void Pin15(GPIOMode_TypeDef mode) const;
         };
-        Port_Init ProtA{Port::PortA};
-        Port_Init ProtB{Port::PortB};
-        Port_Init ProtC{Port::PortC};
-        Port_Init ProtD{Port::PortD};
-        Port_Init ProtE{Port::PortE};
-        Port_Init ProtF{Port::PortF};
+
+        Port_Init ProtA{Port::A};
+        Port_Init ProtB{Port::B};
+        Port_Init ProtC{Port::C};
+
     } static init;
 
-    class
+    class WriteHelper // 添加名称替代匿名类
     {
         GPIO_TypeDef *port;
-        static void doWritePin(GPIO_TypeDef *port, uint16_t pin, BitAction value)
-        {
-            GPIO_WriteBit(port, pin, value);
-        }
+        static void doWritePin(GPIO_TypeDef *port, uint16_t pin, BitAction value);
 
     public:
         class Port_Write
@@ -145,38 +129,34 @@ public:
 
         public:
             Port_Write(GPIO_TypeDef *_port) : port(_port) {}
-            void Pin0(uint8_t value) const { doWritePin(port, GPIO_Pin_0, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin1(uint8_t value) const { doWritePin(port, GPIO_Pin_1, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin2(uint8_t value) const { doWritePin(port, GPIO_Pin_2, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin3(uint8_t value) const { doWritePin(port, GPIO_Pin_3, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin4(uint8_t value) const { doWritePin(port, GPIO_Pin_4, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin5(uint8_t value) const { doWritePin(port, GPIO_Pin_5, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin6(uint8_t value) const { doWritePin(port, GPIO_Pin_6, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin7(uint8_t value) const { doWritePin(port, GPIO_Pin_7, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin8(uint8_t value) const { doWritePin(port, GPIO_Pin_8, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin9(uint8_t value) const { doWritePin(port, GPIO_Pin_9, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin10(uint8_t value) const { doWritePin(port, GPIO_Pin_10, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin11(uint8_t value) const { doWritePin(port, GPIO_Pin_11, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin12(uint8_t value) const { doWritePin(port, GPIO_Pin_12, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin13(uint8_t value) const { doWritePin(port, GPIO_Pin_13, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin14(uint8_t value) const { doWritePin(port, GPIO_Pin_14, value != 0 ? Bit_SET : Bit_RESET); }
-            void Pin15(uint8_t value) const { doWritePin(port, GPIO_Pin_15, value != 0 ? Bit_SET : Bit_RESET); }
+            void Pin0(uint8_t value) const;
+            void Pin1(uint8_t value) const;
+            void Pin2(uint8_t value) const;
+            void Pin3(uint8_t value) const;
+            void Pin4(uint8_t value) const;
+            void Pin5(uint8_t value) const;
+            void Pin6(uint8_t value) const;
+            void Pin7(uint8_t value) const;
+            void Pin8(uint8_t value) const;
+            void Pin9(uint8_t value) const;
+            void Pin10(uint8_t value) const;
+            void Pin11(uint8_t value) const;
+            void Pin12(uint8_t value) const;
+            void Pin13(uint8_t value) const;
+            void Pin14(uint8_t value) const;
+            void Pin15(uint8_t value) const;
         };
-        Port_Write ProtA{Port::PortA};
-        Port_Write ProtB{Port::PortB};
-        Port_Write ProtC{Port::PortC};
-        Port_Write ProtD{Port::PortD};
-        Port_Write ProtE{Port::PortE};
-        Port_Write ProtF{Port::PortF};
+
+        Port_Write ProtA{Port::A};
+        Port_Write ProtB{Port::B};
+        Port_Write ProtC{Port::C};
+
     } static write;
 
-    class
+    class ReadHelper // 添加名称替代匿名类
     {
-        Port port;
-        static bool doReadPin(const GPIO_TypeDef *prot, uint16_t pin)
-        {
-            return GPIO_ReadInputDataBit(const_cast<GPIO_TypeDef *>(prot), pin) != 0;
-        }
+        GPIO_TypeDef *port;
+        static bool doReadPin(GPIO_TypeDef *port, uint16_t pin);
 
     public:
         class Port_read
@@ -185,272 +165,396 @@ public:
 
         public:
             Port_read(GPIO_TypeDef *_port) : port(_port) {}
-            void Pin0(uint8_t value) const { doReadPin(port, GPIO_Pin_0); }
-            void Pin1(uint8_t value) const { doReadPin(port, GPIO_Pin_1); }
-            void Pin2(uint8_t value) const { doReadPin(port, GPIO_Pin_2); }
-            void Pin3(uint8_t value) const { doReadPin(port, GPIO_Pin_3); }
-            void Pin4(uint8_t value) const { doReadPin(port, GPIO_Pin_4); }
-            void Pin5(uint8_t value) const { doReadPin(port, GPIO_Pin_5); }
-            void Pin6(uint8_t value) const { doReadPin(port, GPIO_Pin_6); }
-            void Pin7(uint8_t value) const { doReadPin(port, GPIO_Pin_7); }
-            void Pin8(uint8_t value) const { doReadPin(port, GPIO_Pin_8); }
-            void Pin9(uint8_t value) const { doReadPin(port, GPIO_Pin_9); }
-            void Pin10(uint8_t value) const { doReadPin(port, GPIO_Pin_10); }
-            void Pin11(uint8_t value) const { doReadPin(port, GPIO_Pin_11); }
-            void Pin12(uint8_t value) const { doReadPin(port, GPIO_Pin_12); }
-            void Pin13(uint8_t value) const { doReadPin(port, GPIO_Pin_13); }
-            void Pin14(uint8_t value) const { doReadPin(port, GPIO_Pin_14); }
-            void Pin15(uint8_t value) const { doReadPin(port, GPIO_Pin_15); }
+            void Pin0(uint8_t value) const;
+            void Pin1(uint8_t value) const;
+            void Pin2(uint8_t value) const;
+            void Pin3(uint8_t value) const;
+            void Pin4(uint8_t value) const;
+            void Pin5(uint8_t value) const;
+            void Pin6(uint8_t value) const;
+            void Pin7(uint8_t value) const;
+            void Pin8(uint8_t value) const;
+            void Pin9(uint8_t value) const;
+            void Pin10(uint8_t value) const;
+            void Pin11(uint8_t value) const;
+            void Pin12(uint8_t value) const;
+            void Pin13(uint8_t value) const;
+            void Pin14(uint8_t value) const;
+            void Pin15(uint8_t value) const;
         };
-        Port_read ProtA{Port::PortA};
-        Port_read ProtB{Port::PortA};
-        Port_read ProtC{Port::PortA};
-        Port_read ProtD{Port::PortA};
-        Port_read ProtE{Port::PortA};
-        Port_read ProtF{Port::PortA};
+
+        Port_read ProtA{Port::A};
+        Port_read ProtB{Port::B};
+        Port_read ProtC{Port::C};
+
     } static read;
 
-    static uint16_t read_port(GPIO_TypeDef *port)
-    {
-        return GPIO_ReadInputData(port);
-    }
-    static uint8_t read_pin(GPIO_TypeDef *port, uint16_t pin)
-    {
-        return GPIO_ReadInputDataBit(port, pin);
-    }
-    static void Write_port(GPIO_TypeDef *port, uint16_t val)
-    {
-        GPIO_Write(port, val);
-    }
-    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, bool val)
-    {
-        GPIO_WriteBit(port, pin, val == true ? Bit_SET : Bit_RESET);
-    }
-    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, BitAction val)
-    {
-        GPIO_WriteBit(port, pin, val);
-    }
-    static void Change_pin(GPIO_TypeDef *port, uint16_t pin)
-    {
-        IO::Write_pin(port, pin, !IO::read_pin(port, pin));
-    }
+    static void init_port(GPIO_TypeDef *port);
+    static void init_pin(GPIO_TypeDef *port, uint16_t pin, GPIOMode_TypeDef mode);
+    static uint16_t read_port(GPIO_TypeDef *port);
+    static uint8_t read_pin(GPIO_TypeDef *port, uint16_t pin);
+    static void Write_port(GPIO_TypeDef *port, uint16_t val);
+    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, bool val);
+    static void Write_pin(GPIO_TypeDef *port, uint16_t pin, BitAction val);
+    static void Change_pin(GPIO_TypeDef *port, uint16_t pin);
 } static io;
-uint16_t IO::used[3] = {0, 0, 0};
 
+// Clock类声明
 class Clock
 {
 public:
     class RccProt
     {
     public:
-        static const uint32_t AFIO_RCC = ((uint32_t)0x00000001);
-        static const uint32_t GPIOA_RCC = ((uint32_t)0x00000004);
-        static const uint32_t GPIOB_RCC = ((uint32_t)0x00000008);
-        static const uint32_t GPIOC_RCC = ((uint32_t)0x00000010);
-        static const uint32_t GPIOD_RCC = ((uint32_t)0x00000020);
-        static const uint32_t GPIOE_RCC = ((uint32_t)0x00000040);
-        static const uint32_t GPIOF_RCC = ((uint32_t)0x00000080);
-        static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
-        static const uint32_t ADC1_RCC = ((uint32_t)0x00000200);
-        static const uint32_t ADC2_RCC = ((uint32_t)0x00000400);
-        static const uint32_t Timer_1_RCC = ((uint32_t)0x00000800);
-        static const uint32_t SPI1_RCC = ((uint32_t)0x00001000);
-        static const uint32_t TIM8_RCC = ((uint32_t)0x00002000);
-        static const uint32_t USART_RCC = ((uint32_t)0x00004000);
-        static const uint32_t ADC3_RCC = ((uint32_t)0x00008000);
-        static const uint32_t Timer_15_RCC = ((uint32_t)0x00010000);
-        static const uint32_t Timer_16_RCC = ((uint32_t)0x00020000);
-        static const uint32_t Timer_17_RCC = ((uint32_t)0x00040000);
-        static const uint32_t TIM9_RCC = ((uint32_t)0x00080000);
-        static const uint32_t Timer_10_RCC = ((uint32_t)0x00100000);
-        static const uint32_t Timer_11_RCC = ((uint32_t)0x00200000);
+        constexpr static const uint32_t AFIO_RCC = ((uint32_t)0x00000001);
+        constexpr static const uint32_t GPIOA_RCC = ((uint32_t)0x00000004);
+        constexpr static const uint32_t GPIOB_RCC = ((uint32_t)0x00000008);
+        constexpr static const uint32_t GPIOC_RCC = ((uint32_t)0x00000010);
+        constexpr static const uint32_t GPIOD_RCC = ((uint32_t)0x00000020);
+        constexpr static const uint32_t GPIOE_RCC = ((uint32_t)0x00000040);
+        constexpr static const uint32_t GPIOF_RCC = ((uint32_t)0x00000080);
+        constexpr static const uint32_t GPIOG_RCC = ((uint32_t)0x00000100);
+        constexpr static const uint32_t ADC1_RCC = ((uint32_t)0x00000200);
+        constexpr static const uint32_t ADC2_RCC = ((uint32_t)0x00000400);
+        constexpr static const uint32_t Timer_1_RCC = ((uint32_t)0x00000800);
+        constexpr static const uint32_t SPI1_RCC = ((uint32_t)0x00001000);
+        constexpr static const uint32_t TIM8_RCC = ((uint32_t)0x00002000);
+        constexpr static const uint32_t USART_RCC = ((uint32_t)0x00004000);
+        constexpr static const uint32_t ADC3_RCC = ((uint32_t)0x00008000);
+        constexpr static const uint32_t Timer_15_RCC = ((uint32_t)0x00010000);
+        constexpr static const uint32_t Timer_16_RCC = ((uint32_t)0x00020000);
+        constexpr static const uint32_t Timer_17_RCC = ((uint32_t)0x00040000);
+        constexpr static const uint32_t TIM9_RCC = ((uint32_t)0x00080000);
+        constexpr static const uint32_t Timer_10_RCC = ((uint32_t)0x00100000);
+        constexpr static const uint32_t Timer_11_RCC = ((uint32_t)0x00200000);
     } port_to_open;
+
     class Open
     {
     public:
-        static void APB1Periph(uint32_t RCC_APB1Periph)
-        {
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph, ENABLE);
-        }
-        static void APB2Periph(uint32_t RCC_APB2Periph)
-        {
-            RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
-        }
-        static void AHBPeriph(uint32_t AHBPe_RCCriph)
-        {
-            RCC_AHBPeriphClockCmd(AHBPe_RCCriph, ENABLE);
-        }
-
+        static void APB1Periph(uint32_t RCC_APB1Periph);
+        static void APB2Periph(uint32_t RCC_APB2Periph);
+        static void AHBPeriph(uint32_t AHBPe_RCCriph);
+        static void port(GPIO_TypeDef *port);
     } open;
+
     class Close
     {
     public:
-        static void APB1Periph(uint32_t RCC_APB1Periph)
-        {
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph, DISABLE);
-        }
-        static void APB2Periph(uint32_t RCC_APB2Periph)
-        {
-            RCC_APB2PeriphClockCmd(RCC_APB2Periph, DISABLE);
-        }
-        static void AHBPeriph(uint32_t RCC_AHBPeriph)
-        {
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph, DISABLE);
-        }
+        static void APB1Periph(uint32_t RCC_APB1Periph);
+        static void APB2Periph(uint32_t RCC_APB2Periph);
+        static void AHBPeriph(uint32_t RCC_AHBPeriph);
+        static void port(GPIO_TypeDef *port);
     } close;
-    // Timer1为总线2(高级)
-    // Timer2/3/4为总线1(通用)
-    // GPIO a~g 中断为总线2
 } static clocks;
-extern "C" void TIM2_IRQHandler(void);
+
+// 时间类声明
+class time_us
+{
+public:
+    constexpr time_us(uint16_t _val) : val(_val) {}
+    constexpr operator uint16_t() const { return val; }
+    uint16_t val;
+};
+class time_ms
+{
+public:
+    constexpr time_ms(uint16_t _val) : val(_val) {}
+    constexpr operator uint16_t() const { return val; }
+    uint16_t val;
+};
+class time_s
+{
+public:
+    constexpr time_s(uint16_t _val) : val(_val) {}
+    constexpr operator uint16_t() const { return val; }
+    uint16_t val;
+};
+
+// 运算符重载函数声明
+inline constexpr time_us operator"" _us(unsigned long long _val)
+{
+    return time_us{static_cast<uint16_t>(_val)};
+}
+inline constexpr time_ms operator"" _ms(unsigned long long _val)
+{
+    return time_ms{static_cast<uint16_t>(_val)};
+}
+inline constexpr time_s operator"" _s(unsigned long long _val)
+{
+    return time_s{static_cast<uint16_t>(_val)};
+}
+
+// Device命名空间声明
 namespace Device
 {
-    // 默认低电平
+    // Timer类声明
     class Timer
     {
-        friend class Advanced_timer;
-        friend class Universal_timer;
     public:
-        static void (*fun[4])(void);
-
-    public:
-        class TimerType
+        class Channal
         {
+
         public:
-            class Universal
+            uint8_t timer;
+            uint8_t index;
+            Channal(uint8_t _timer, uint8_t _index);
+            uint32_t portRcc();
+            inline Channal() = default;
+            Timer::Channal &operator=(Timer::Channal &&that);
+            uint16_t getPin();
+            GPIO_TypeDef *getPort();
+
+            // 动态初始化channal(标准库居然没有)
+            void static TIM_OCxInit(TIM_TypeDef *TIMx,
+                                    TIM_OCInitTypeDef *TIM_OCInitStruct,
+                                    uint8_t channel);
+            // 根据指定的通道号动态配置TIMx外设预加载寄存器
+            void static TIM_OCxPreloadConfig(TIM_TypeDef *TIMx, uint16_t TIM_OCPreload, uint8_t channel);
+
+            void init();
+            class ChannalType
             {
             public:
-                static const uint8_t timer_2 = 0;
-                static const uint8_t timer_3 = 1;
-                static const uint8_t timer_4 = 2;
+                constexpr static const uint8_t channal_1 = 0b0001;
+                constexpr static const uint8_t channal_2 = 0b0010;
+                constexpr static const uint8_t channal_3 = 0b0100;
+                constexpr static const uint8_t channal_4 = 0b1000;
             };
         };
-
-    public:
         class Universal_timer
         {
-            // 中断优先级配置
-            // #define BASIC_TIM TIM4
-            // #define BASIC_TIM_APBxClock_FUN RCC_APB1PeriphClockCmd
-            // #define BASIC_TIM_CLK RCC_APB1Periph_TIM4
-            // #define BASIC_TIM_Period (1000 - 1)
-            // #define BASIC_TIM_Prescaler 71
-            // #define BASIC_TIM_IRQ TIM4_IRQn // 中断来源
-            // #define BASIC_TIM_IRQHandler TIM6_IRQHandler
+        public:
+            class TimerType
+            {
+            public:
+                constexpr static const uint8_t timer_2 = 0;
+                constexpr static const uint8_t timer_3 = 1;
+                constexpr static const uint8_t timer_4 = 2;
+            };
+
         private:
             uint8_t index;
             TIM_TypeDef *BASIC_TIM;
 
         public:
-            void setCallback(void (*func)(void))
-            {
-                Timer::fun[this->index]();
-            }
-            Universal_timer(uint8_t timerType, uint16_t times) : index(timerType), BASIC_TIM(TIM2 + (0x0400) * (index))
-            {
-                NVIC_Config();
-                TIM_Config(times);
-            };
-            void NVIC_Config()
-            {
-                NVIC_InitTypeDef NVIC_InitStructure;
-                // 设置中断组为0
-                NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
-                // 设置中断来源
-                // IRQn_Type;
-                NVIC_InitStructure.NVIC_IRQChannel = index + 28;
-                // 设置主优先级为 0
-                NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-                // 设置抢占优先级为3
-                NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
-                NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-                NVIC_Init(&NVIC_InitStructure);
-            }
-
-            void TIM_Config(uint16_t limits)
-            {
-
-                uint16_t BASIC_TIM_Prescaler = 71;
-                TIM_TypeDef *timer = 0;
-
-                TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-
-                // 开启定时器时钟,即内部时钟CK_INT=72M
-                RCC_APB1PeriphClockCmd(((uint32_t)0x00000001) << (index), ENABLE);
-                // RCC_APB1Periph_TIM4;
-                // 自动重装载寄存器的值，累计TIM_Period+1个频率后产生一个更新或者中断
-                // uint16_t limits = 1000 - 1;
-                TIM_TimeBaseStructure.TIM_Period = limits;
-                // 时钟预分频数为
-                TIM_TimeBaseStructure.TIM_Prescaler = BASIC_TIM_Prescaler;
-
-                // 时钟分频因子 ，基本定时器没有，不用管
-                TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-
-                // 计数器计数模式，基本定时器只能向上计数，没有计数模式的设置
-                TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-
-                // 重复计数器的值，基本定时器没有，不用管
-                TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
-
-                // 初始化定时器
-                TIM_TimeBaseInit(BASIC_TIM, &TIM_TimeBaseStructure);
-
-                // 清除计数器中断标志位
-                TIM_ClearFlag(BASIC_TIM, TIM_FLAG_Update);
-
-                // 开启计数器中断：计数器溢出、产生更新事件、计数器的更新事件能够产生中断、并被使能
-                TIM_ITConfig(BASIC_TIM, TIM_IT_Update, ENABLE);
-
-                // 使能计数器
-                TIM_Cmd(BASIC_TIM, ENABLE);
-            }
-
-            void BASIC_TIM_Init(void)
-            {
-                NVIC_Config();
-                TIM_Config(6);
-            }
+            Universal_timer(uint8_t timerType, time_ms times);
+            Universal_timer(uint8_t timerType, time_s times);
+            void NVIC_Config();
+            void TIM_Config(uint16_t ms_time);
         };
+
         class Advanced_timer
         {
         };
     };
-    // 在命名空间外部定义静态成员
-    void (*Device::Timer::fun[4])(void) = {nullptr, nullptr, nullptr, nullptr};
+
+    class PWM
+    {
+        uint8_t channals;
+        uint8_t timer;
+        uint16_t frequency;
+        Timer::Channal channal_1;
+        Timer::Channal channal_2;
+        Timer::Channal channal_3;
+        Timer::Channal channal_4;
+
+    public:
+        PWM(uint8_t timertype, uint8_t channals);
+        void start();
+        void stop();
+        void change(uint8_t channal, uint16_t _frequency, uint8_t _dutyRatio);
+        uint32_t getRcc();
+    };
+    // LED类声明
     class LED
     {
         GPIO_TypeDef *port;
         uint16_t pin;
-        // std::vector<int> a;
 
     public:
-        LED(GPIO_TypeDef *_port, uint16_t _pin, GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz, GPIOMode_TypeDef mode = IOMode::Out_PP)
-            : pin(_pin), port(_port)
-        {
-            if (io.sign(_port, _pin))
-            {
-                clocks.open.APB2Periph(clocks.port_to_open.GPIOA_RCC);
-                GPIO_InitTypeDef GPIO_InitStructure;
-                GPIO_InitStructure.GPIO_Pin = pin;
-                GPIO_InitStructure.GPIO_Mode = mode;
-                GPIO_InitStructure.GPIO_Speed = Speed;
-                GPIO_Init(port, &GPIO_InitStructure);
-                io.Write_pin(port, pin, 0);
-            }
-        }
-        void turn()
-        {
-            io.Change_pin(this->port, this->pin);
-        }
+        LED(GPIO_TypeDef *_port, uint16_t _pin,
+            GPIOSpeed_TypeDef Speed = IOSpeed::_50MHz,
+            GPIOMode_TypeDef mode = IOMode::Out_PP);
+        void turn();
     };
-};
-extern "C" void TIM2_IRQHandler(void)
-{
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) // 检查指定的TIM中断发生与否:TIM 中断源
+
+    // OLED类声明
+    class OLED
     {
-        // do something;
-        Device::Timer::fun[0]();
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除TIMx的中断待处理位:TIM 中断源
-    }
-}
+    public:
+        constexpr static const uint8_t OLED_8X16 = 8;
+        constexpr static const uint8_t OLED_6X8 = 6;
+        /*IsFilled参数数值*/
+        constexpr static const uint8_t OLED_UNFILLED = 0;
+        constexpr static const uint8_t OLED_FILLED = 1;
+        GPIO_TypeDef *SCL_port;
+        uint16_t SCL_pin;
+        GPIO_TypeDef *SDA_port;
+        uint16_t SDA_pin;
+        uint8_t DisplayBuf[8][128];
+
+        OLED(GPIO_TypeDef *_SCL_port = GPIOB, uint16_t _SCL_pin = GPIO_Pin_8,
+             GPIO_TypeDef *_SDA_port = GPIOB, uint16_t _SDA_pin = GPIO_Pin_9);
+
+        void W_SCL(uint8_t BitValue);
+        void W_SDA(uint8_t BitValue);
+        uint32_t GPIOX_to_RCC(GPIO_TypeDef *GPIOX);
+        void OLED_GPIO_Init(void);
+        void I2C_Start(void);
+        void I2C_Stop(void);
+        void I2C_SendByte(uint8_t Byte);
+        void WriteCommand(uint8_t Command);
+        void WriteData(uint8_t *Data, uint8_t Count);
+        void Init(void);
+        void SetCursor(uint8_t Page, uint8_t X);
+        uint32_t Pow(uint32_t X, uint32_t Y);
+        uint8_t pnpoly(uint8_t nvert, int16_t *vertx, int16_t *verty, int16_t testx, int16_t testy);
+        uint8_t IsInAngle(int16_t X, int16_t Y, int16_t StartAngle, int16_t EndAngle);
+        void Update(void);
+        void UpdateArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
+        void Clear(void);
+        void ClearArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
+        void Reverse(void);
+        void ReverseArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
+        void ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize);
+        void ShowString(int16_t X, int16_t Y, const char *String, uint8_t FontSize);
+        void ShowNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
+        void ShowSignedNum(int16_t X, int16_t Y, int32_t Number, uint8_t Length, uint8_t FontSize);
+        void ShowHexNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
+        void ShowBinNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
+        void ShowFloatNum(int16_t X, int16_t Y, double Number, uint8_t IntLength, uint8_t FraLength, uint8_t FontSize);
+        void ShowImage(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, const uint8_t *Image);
+        void Printf(int16_t X, int16_t Y, uint8_t FontSize, char *format, ...);
+        void DrawPoint(int16_t X, int16_t Y);
+        uint8_t GetPoint(int16_t X, int16_t Y);
+        void DrawLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1);
+        void DrawRectangle(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, uint8_t IsFilled);
+        void DrawTriangle(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1, int16_t X2, int16_t Y2, uint8_t IsFilled);
+        void DrawCircle(int16_t X, int16_t Y, uint8_t Radius, uint8_t IsFilled);
+        void DrawEllipse(int16_t X, int16_t Y, uint8_t A, uint8_t B, uint8_t IsFilled);
+        void DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAngle, int16_t EndAngle, uint8_t IsFilled);
+    };
+
+    class ADC
+    {
+    public:
+        class Mode
+        {
+        public:
+            constexpr static const uint8_t non_continuous = 0;
+            constexpr static const uint8_t continuous = 1;
+            constexpr static const uint8_t non_multichannel = 0;
+            constexpr static const uint8_t multichannel = 1;
+            constexpr static const uint32_t T1_CC1 = ((uint32_t)0x00000000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T1_CC2 = ((uint32_t)0x00020000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T2_CC2 = ((uint32_t)0x00060000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T3_TRGO = ((uint32_t)0x00080000);            /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T4_CC4 = ((uint32_t)0x000A0000);             /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t Ext_IT11_TIM8_TRGO = ((uint32_t)0x000C0000); /*!< For ADC1 and ADC2 */
+            constexpr static const uint32_t T1_CC3 = ((uint32_t)0x00040000);             /*!< For ADC1, ADC2 and ADC3 */
+            constexpr static const uint32_t None = ((uint32_t)0x000E0000);               /*!< For ADC1, ADC2 and ADC3 */
+        };
+        enum Channel
+        {
+            Channel0 = ADC_Channel_0,   // PA0
+            Channel1 = ADC_Channel_1,   // PA1
+            Channel2 = ADC_Channel_2,   // PA2
+            Channel3 = ADC_Channel_3,   // PA3
+            Channel4 = ADC_Channel_4,   // PA4
+            Channel5 = ADC_Channel_5,   // PA5
+            Channel6 = ADC_Channel_6,   // PA6
+            Channel7 = ADC_Channel_7,   // PA7
+            Channel8 = ADC_Channel_8,   // PB0
+            Channel9 = ADC_Channel_9,   // PB1
+            Channel16 = ADC_Channel_16, // 内部温度传感器
+            Channel17 = ADC_Channel_17  // 内部参考电压
+        };
+        class ADCType
+        {
+        public:
+            inline static ADC_TypeDef *const adc1 = ADC1;
+            inline static ADC_TypeDef *const adc2 = ADC2;
+        };
+        uint8_t iscontinuous;
+        uint8_t num_channals;
+        ADC_TypeDef *adcType;
+        ADC(uint8_t iscontinuous, uint8_t num_channals, uint32_t triggerType, ADC_TypeDef *adc);
+        void addChannal(uint8_t channal);
+        uint16_t getChannal(uint8_t channal);
+        float convertToTemperature(uint16_t adcValue);
+    };
+
+    class Bluetooth
+    {
+    private:
+        USART_TypeDef *USARTx;
+        uint32_t baudRate;
+        uint16_t rxIndex;
+
+        // 帮助函数，处理接收到的字符
+        void processReceivedChar(uint8_t data);
+
+    public:
+        void (*callback)(Bluetooth *self) = nullptr;
+        // 构造函数
+        Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate);
+
+        // 初始化函数
+        void init();
+
+        // 发送函数
+        void sendByte(uint8_t byte);
+        void sendData(uint8_t *data, uint16_t len);
+        void sendString(const char *str);
+
+        bool isDataAvailable();
+
+        uint8_t receiveByte();
+
+        void receiveData(uint8_t *buffer, uint16_t len);
+        bool equal(const char *const in);
+        bool equal_case(const char *const in);
+        // 获取最后接收的完整行数据
+        char *
+        getLastData();
+        // void clear();
+        // 获取接收缓冲区内容
+        const char *getBuffer() const;
+
+        // 获取当前接收缓冲区长度
+        uint16_t getBufferLength() const;
+
+        void enterATMode();
+        uint8_t getNum();
+        void exitATMode();
+
+        // 获取当前缓冲区内数据的数量
+        uint16_t getNum() const;
+
+        // 清空缓冲区
+        void clear();
+
+        bool sendATCommand(const char *command, char *response, uint16_t timeout);
+
+        // 中断处理函数
+        void handleInterrupt();
+
+        // 接收缓冲区，增大到64字节
+        char rxBuffer[64];
+        bool hasNewData;
+
+        // 添加格式化输出方法
+        void printf(const char *fmt, ...);
+    };
+} // namespace Device
+
+namespace System
+{
+    // TODO有bug，暂停使用
+    void delay(time_ms);
+    void delay(time_us);
+    void delay(time_s);
+};
+
+#endif // _TP_H_

@@ -10,6 +10,63 @@
             "processorName": "${command:cmsis-csolution.getProcessorName}",
             "problemMatcher": [],
             "label": "Flash Device"
+        },
+        {
+            "label": "Reset STM32",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f1x.cfg",
+                "-c",
+                "init; reset; shutdown"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "cbuild Arm_STD.csolution.yml --target Arm_STD.Debug+STM32F103C8",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Delay",
+            "type": "shell",
+            "command": "ping -n 3 127.0.0.1 | Out-Null",
+            "problemMatcher": []
+        },
+        {
+            "label": "一键编译+烧录+复位",
+            "dependsOn": [
+                "Build",
+                "Flash Device",
+                //  "Delay", // 添加延时
+                "Reset STM32"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+        },
+        {
+            "label": "start-qemu",
+            "type": "shell",
+            "command": "qemu-system-arm -M stm32-p103 -cpu cortex-m3 -kernel ${workspaceFolder}/out/Arm_STD/STM32F103C8/Debug/Arm_STD.axf -nographic -s -S",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "."
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "."
+                }
+            }
         }
     ]
 }

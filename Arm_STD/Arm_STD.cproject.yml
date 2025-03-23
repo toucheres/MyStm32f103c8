@@ -5,6 +5,13 @@ project:
     - group: Source Files
       files:
         - file: ./main.cpp
+        - file: ./OLED_Data.c
+        - file: ./MyStm32.cpp
+        - file: ./Timer.cpp
+        - file: ./ADC.cpp
+        - file: ./OLED.cpp
+        - file: ./PWM.cpp
+        - file: ./Bluetooth.cpp
         # - file: ./MyStm32.cpp
 
         # List components to use for your application.
@@ -17,6 +24,10 @@ project:
     - component: Keil::Device:StdPeriph Drivers:GPIO
     - component: Keil::Device:StdPeriph Drivers:RCC
     - component: Keil::Device:StdPeriph Drivers:TIM
+    - component: Keil::Device:StdPeriph Drivers:ADC
+    - component: Keil::Device:DMA
+    - component: ARM::CMSIS Driver:USART:Custom
+    - component: Keil::Device:StdPeriph Drivers:USART
 
   # List executable file formats to be generated.
   output:
@@ -25,3 +36,4 @@ project:
     #  - hex
   packs:
     - pack: Keil::STM32F1xx_DFP
+    - pack: ARM::CMSIS
