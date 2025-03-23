@@ -1,12 +1,11 @@
 #include "RTE_Components.h"
-#include <string.h>
 #include CMSIS_device_header
 #include "MyStm32.h"
+#include <string.h>
 
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
-Device::Bluetooth bluetooth{USART1, true, 9600};
-// 在main.cpp中修改中断处理函数
+Device::Bluetooth bluetooth{USART1, 9600};
 USART1_fun { bluetooth.handleInterrupt(); }
 void bt_fun(Device::Bluetooth *bt)
 {
@@ -28,7 +27,7 @@ void bt_fun(Device::Bluetooth *bt)
                strlen(bt->getBuffer()));
 
     // 使用更灵活的命令比较方式
-    if (strcmp(bt->getBuffer(), "Clear") == 0)
+    if (bt->equal("Clear"))
     {
         bt->printf("Command: Clear executed at count %lu\r\n", 1);
         bt->clear();
@@ -39,9 +38,11 @@ void bt_fun(Device::Bluetooth *bt)
         oled.ShowString(0, 16, "executed!", Device::OLED::OLED_8X16);
         oled.Update();
     }
-    else if (strcasecmp(bt->getBuffer(), "LED OFF") == 0)
+    else if (bt->equal_case("led change"))
     {
-        bt->sendString("Command: LED OFF\r\n");
+        led.turn();
+        bt->sendString("Command: LED changed\r\n");
+
         // LED处理代码
     }
     else

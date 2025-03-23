@@ -1,13 +1,14 @@
 #include "MyStm32.h"
 #include "stm32f10x_usart.h"
 #include <stdarg.h>
+#include <string.h>
 
 namespace Device
 {
 
     // 构造函数初始化成员变量
-    Bluetooth::Bluetooth(USART_TypeDef *_usart, bool _autoHand = true, uint32_t _baudRate = 9600)
-        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false), autoHand(_autoHand)
+    Bluetooth::Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate = 9600)
+        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false)
     {
         // 清空接收缓冲区
         for (uint16_t i = 0; i < sizeof(rxBuffer); i++)
@@ -180,7 +181,7 @@ namespace Device
                 }
 
                 hasNewData = true;
-                if (autoHand)
+                if (callback)
                 {
                     callback(this);
                     hasNewData = false;
@@ -240,6 +241,9 @@ namespace Device
             rxBuffer[0] = 0;
         }
     }
+
+    bool Bluetooth::equal(const char *const in) { return strcmp(this->getBuffer(), in) == 0; }
+    bool Bluetooth::equal_case(const char *const in) { return strcasecmp(this->getBuffer(), in) == 0; }
 
     char *Bluetooth::getLastData()
     {
