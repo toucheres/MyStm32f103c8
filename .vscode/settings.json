@@ -15,7 +15,7 @@
         "--compile-commands-dir=c:\\work\\stm32\\Arm_STD\\out\\Arm_STD\\STM32F103C8\\Debug"
     ],
     "files.associations": {
-        "*.s": "plaintext",
+        "*.s": "arm",
         "stm32f10x.h": "c",
         "vector": "cpp",
         "variant": "cpp",

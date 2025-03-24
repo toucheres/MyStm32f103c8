@@ -184,8 +184,6 @@ namespace Device
                 if (callback)
                 {
                     callback(this);
-                    hasNewData = false;
-                    this->clear();
                 }
             }
             // 如果是空命令，直接忽略

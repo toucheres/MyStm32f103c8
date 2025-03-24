@@ -9,7 +9,6 @@ uint32_t Device::Timer::Channal::portRcc()
 
 Device::Timer::Channal &Device::Timer::Channal::operator=(Timer::Channal &&that)
 {
-    // TODO: 在此处插入 return 语句
     this->timer = that.timer;
     this->index = that.index;
     return *this;

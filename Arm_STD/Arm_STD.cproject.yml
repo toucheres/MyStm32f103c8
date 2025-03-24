@@ -28,6 +28,7 @@ project:
     - component: Keil::Device:DMA
     - component: ARM::CMSIS Driver:USART:Custom
     - component: Keil::Device:StdPeriph Drivers:USART
+    - component: Keil::Device:StdPeriph Drivers:PWR
 
   # List executable file formats to be generated.
   output:

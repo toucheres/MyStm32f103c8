@@ -9,7 +9,6 @@ Device::Bluetooth bluetooth{USART1, 9600};
 USART1_fun { bluetooth.handleInterrupt(); }
 void bt_fun(Device::Bluetooth *bt)
 {
-
     oled.Clear();
     oled.ShowString(0, 0, "Received:", Device::OLED::OLED_6X8);
     oled.ShowString(0, 16, bt->getBuffer(), Device::OLED::OLED_8X16);
@@ -45,6 +44,21 @@ void bt_fun(Device::Bluetooth *bt)
 
         // LED处理代码
     }
+    else if (bt->equal_case("show"))
+    {
+        bt->sendString("Command: show\r\n");
+        oled.Clear();
+        oled.ShowString(0, 0, "Waiting...", Device::OLED::OLED_8X16);
+
+        // 显示缓冲区内容
+        char debug_str[32];
+        sprintf(debug_str, "Buf[%d]:%s", strlen(bluetooth.rxBuffer), bluetooth.rxBuffer);
+        oled.ShowString(0, 16, debug_str, Device::OLED::OLED_6X8);
+
+        oled.Update();
+
+        // LED处理代码
+    }
     else
     {
         // 未知命令处理
@@ -53,13 +67,13 @@ void bt_fun(Device::Bluetooth *bt)
 
     // 重置标志并清空缓冲区，准备接收下一条命令
     bt->clear();
+    bt->hasNewData = false;
 }
 // 修改main循环，使用蓝牙类的缓冲区
 int main(void)
 {
     // 初始化系统
     SystemInit();
-
     // 创建并初始化OLED对象
     oled.Init();
     oled.Clear();
@@ -76,20 +90,6 @@ int main(void)
     uint32_t counter = 0;
     while (1)
     {
-        counter++;
-
-        // 每秒更新一次状态
-        if (counter % 100000 == 0)
-        {
-            oled.Clear();
-            oled.ShowString(0, 0, "Waiting...", Device::OLED::OLED_8X16);
-
-            // 显示缓冲区内容
-            char debug_str[32];
-            sprintf(debug_str, "Buf[%d]:%s", strlen(bluetooth.rxBuffer), bluetooth.rxBuffer);
-            oled.ShowString(0, 16, debug_str, Device::OLED::OLED_6X8);
-
-            oled.Update();
-        }
+        System::power::sleep_for_interrupt();
     }
 }
