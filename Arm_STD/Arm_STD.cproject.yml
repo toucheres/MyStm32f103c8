@@ -30,6 +30,7 @@ project:
     - component: Keil::Device:StdPeriph Drivers:USART
     - component: Keil::Device:StdPeriph Drivers:PWR
     - component: Keil::Device:StdPeriph Drivers:IWDG
+    - component: Keil::Device:StdPeriph Drivers:EXTI
 
   # List executable file formats to be generated.
   output:

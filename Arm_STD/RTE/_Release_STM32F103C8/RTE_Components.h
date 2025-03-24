@@ -17,6 +17,8 @@
 
 /* Keil::Device:StdPeriph Drivers:ADC@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_ADC
+/* Keil::Device:StdPeriph Drivers:EXTI@3.6.0 */
+#define RTE_DEVICE_STDPERIPH_EXTI
 /* Keil::Device:StdPeriph Drivers:Framework@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_FRAMEWORK
 /* Keil::Device:StdPeriph Drivers:GPIO@3.6.0 */

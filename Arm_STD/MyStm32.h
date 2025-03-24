@@ -1,6 +1,7 @@
 #ifndef _MYSTM32_H_
 #define _MYSTM32_H_
 #include "stm32f10x.h"
+#include "stm32f10x_exti.h"
 #include <cstddef>
 #include <cstdint>
 extern "C"
@@ -554,10 +555,12 @@ namespace System
     void delay(time_ms);
     void delay(time_us);
     void delay(time_s);
-    class WatchDog {
-      public:
-        class IndependWatchDog {
-          public:
+    class WatchDog
+    {
+    public:
+        class IndependWatchDog
+        {
+        public:
             static void setTime(time_us timeus);
             static void setTime(time_ms timems);
             static void setTime(time_s times);
@@ -567,70 +570,165 @@ namespace System
             static void IWDG_Init(u8 prer, u16 rlr);
         };
     };
-        namespace power
+    namespace power
+    {
+        inline void sleep_for_interrupt() { __WFI(); };
+        inline void sleep_for_event() { __WFE(); };
+        // STOP模式是一种低功耗模式，主要时钟停止，但RAM和寄存器内容保持不变。以下中断可以唤醒STOP模式：
+        // EXTI线外部中断
+        //  EXTI0-EXTI15：连接到GPIO引脚PA0-PF15的外部中断
+        //  EXTI16：PVD电源电压检测器输出
+        //  EXTI17：RTC闹钟中断
+        //  EXTI18：USB唤醒事件（如有）
+        //  EXTI19：ETH唤醒事件（如有）
+        // 独立看门狗中断 (IWDG)
+        // 窗口看门狗中断 (WWDG)
+        // 实时时钟 (RTC) 闹钟中断
+        // 外部复位引脚 (NRST)
+        inline void stop()
         {
-            inline void sleep_for_interrupt() { __WFI(); };
-            inline void sleep_for_event() { __WFE(); };
-            // STOP模式是一种低功耗模式，主要时钟停止，但RAM和寄存器内容保持不变。以下中断可以唤醒STOP模式：
-            // EXTI线外部中断
-            //  EXTI0-EXTI15：连接到GPIO引脚PA0-PF15的外部中断
-            //  EXTI16：PVD电源电压检测器输出
-            //  EXTI17：RTC闹钟中断
-            //  EXTI18：USB唤醒事件（如有）
-            //  EXTI19：ETH唤醒事件（如有）
-            // 独立看门狗中断 (IWDG)
-            // 窗口看门狗中断 (WWDG)
-            // 实时时钟 (RTC) 闹钟中断
-            // 外部复位引脚 (NRST)
-            inline void stop()
-            {
-                // 使能PWR时钟
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-                // 清除唤醒标志
-                PWR_ClearFlag(PWR_FLAG_WU);
-                // 设置电压调节器模式
-                PWR_EnterSTOPMode(PWR_Regulator_ON, PWR_STOPEntry_WFI);
-            };
-            inline void stop_lpPowerControl()
-            {
-                // 使能PWR时钟
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-                // 清除唤醒标志
-                PWR_ClearFlag(PWR_FLAG_WU);
-                // 设置低功耗电压调节器模式
-                PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
-            };
-            // 唤醒STANDBY模式的中断源
-            // STANDBY模式是STM32最低功耗的模式，除备份域外，所有内容都会丢失。能唤醒STANDBY模式的中断源很少：
+            // 使能PWR时钟
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+            // 清除唤醒标志
+            PWR_ClearFlag(PWR_FLAG_WU);
+            // 设置电压调节器模式
+            PWR_EnterSTOPMode(PWR_Regulator_ON, PWR_STOPEntry_WFI);
+        };
+        inline void stop_lpPowerControl()
+        {
+            // 使能PWR时钟
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+            // 清除唤醒标志
+            PWR_ClearFlag(PWR_FLAG_WU);
+            // 设置低功耗电压调节器模式
+            PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
+        };
+        // 配置外部中断唤醒函数
+        inline void configEXTIForWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                                        EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling)
+        {
+            // 使能GPIO和AFIO时钟
+            if (GPIOx == GPIOA)
+                RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+            else if (GPIOx == GPIOB)
+                RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+            else if (GPIOx == GPIOC)
+                RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 
-            // WKUP引脚 (PA0) 上的上升沿(必须通过PWR_WakeUpPinCmd(ENABLE)启用)
-            // 实时时钟 (RTC) 闹钟事件(如果在进入STANDBY前已启用)
-            // 外部复位 (NRST引脚)
-            // 独立看门狗复位
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
-            inline void standby()
+            // 初始化GPIO为输入模式
+            GPIO_InitTypeDef GPIO_InitStructure;
+            GPIO_InitStructure.GPIO_Pin = GPIO_Pin;
+            GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 输入上拉
+            GPIO_Init(GPIOx, &GPIO_InitStructure);
+
+            // 配置EXTI线
+            uint8_t GPIO_PortSource;
+            uint8_t GPIO_PinSource = 0;
+
+            // 确定PortSource
+            if (GPIOx == GPIOA)
+                GPIO_PortSource = GPIO_PortSourceGPIOA;
+            else if (GPIOx == GPIOB)
+                GPIO_PortSource = GPIO_PortSourceGPIOB;
+            else if (GPIOx == GPIOC)
+                GPIO_PortSource = GPIO_PortSourceGPIOC;
+
+            // 确定PinSource
+            for (uint8_t i = 0; i < 16; i++)
             {
-                // 使能PWR时钟
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-                // 清除唤醒标志
-                PWR_ClearFlag(PWR_FLAG_WU);
-                // 设置唤醒引脚(如需启用，取消注释)
-                PWR_WakeUpPinCmd(ENABLE);
-                // 进入待机模式
-                PWR_EnterSTANDBYMode();
-            };
+                if (GPIO_Pin == (1 << i))
+                {
+                    GPIO_PinSource = i;
+                    break;
+                }
+            }
+
+            // 连接GPIO到EXTI线
+            GPIO_EXTILineConfig(GPIO_PortSource, GPIO_PinSource);
+
+            // 配置EXTI
+            EXTI_InitTypeDef EXTI_InitStructure;
+            EXTI_InitStructure.EXTI_Line = GPIO_Pin; // EXTI线与GPIO_Pin保持一致
+            EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+            EXTI_InitStructure.EXTI_Trigger = Trigger;
+            EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+            EXTI_Init(&EXTI_InitStructure);
+
+            // 配置NVIC
+            NVIC_InitTypeDef NVIC_InitStructure;
+
+            // 根据不同引脚配置不同的中断通道
+            if (GPIO_Pin == GPIO_Pin_0)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+            else if (GPIO_Pin == GPIO_Pin_1)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+            else if (GPIO_Pin == GPIO_Pin_2)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn;
+            else if (GPIO_Pin == GPIO_Pin_3)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI3_IRQn;
+            else if (GPIO_Pin == GPIO_Pin_4)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI4_IRQn;
+            else if (GPIO_Pin >= GPIO_Pin_5 && GPIO_Pin <= GPIO_Pin_9)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
+            else if (GPIO_Pin >= GPIO_Pin_10 && GPIO_Pin <= GPIO_Pin_15)
+                NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+
+            NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+            NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+            NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+            NVIC_Init(&NVIC_InitStructure);
         }
-        // 重要区别
-        // STOP模式
-        // 保留RAM内容和寄存器值
-        // 唤醒后从停止点继续执行
-        // 唤醒源较多
-        // 功耗中等
-        // STANDBY模式
-        // 除备份寄存器外不保留任何内容
-        // 唤醒相当于系统复位
-        // 唤醒源极少
-        // 功耗最低
-    };
+        // 唤醒STANDBY模式的中断源
+        // STANDBY模式是STM32最低功耗的模式，除备份域外，所有内容都会丢失。能唤醒STANDBY模式的中断源很少：
+
+        // WKUP引脚 (PA0) 上的上升沿(必须通过PWR_WakeUpPinCmd(ENABLE)启用)
+        // 实时时钟 (RTC) 闹钟事件(如果在进入STANDBY前已启用)
+        // 外部复位 (NRST引脚)
+        // 独立看门狗复位
+        // 使用外部中断唤醒STOP模式
+        inline void stopWithEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                                       EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling)
+        {
+            // 配置外部中断
+            configEXTIForWakeup(GPIOx, GPIO_Pin, Trigger);
+
+            // 使能PWR时钟
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+
+            // 清除唤醒标志
+            PWR_ClearFlag(PWR_FLAG_WU);
+
+            // 进入STOP模式
+            PWR_EnterSTOPMode(PWR_Regulator_ON, PWR_STOPEntry_WFI);
+
+            // 唤醒后需要重新配置系统时钟
+            SystemInit();
+        }
+        inline void standby()
+        {
+            // 使能PWR时钟
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+            // 清除唤醒标志
+            PWR_ClearFlag(PWR_FLAG_WU);
+            // 设置唤醒引脚(如需启用，取消注释)
+            PWR_WakeUpPinCmd(ENABLE);
+            // 进入待机模式
+            PWR_EnterSTANDBYMode();
+        };
+    }
+    // 重要区别
+    // STOP模式
+    // 保留RAM内容和寄存器值
+    // 唤醒后从停止点继续执行
+    // 唤醒源较多
+    // 功耗中等
+    // STANDBY模式
+    // 除备份寄存器外不保留任何内容
+    // 唤醒相当于系统复位
+    // 唤醒源极少
+    // 功耗最低
+};
 
 #endif // _TP_H_
