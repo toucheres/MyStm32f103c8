@@ -19,6 +19,7 @@ extern "C"
 #define timer3_fun extern "C" void TIM3_IRQHandler(void)
 #define timer4_fun extern "C" void TIM4_IRQHandler(void)
 #define USART1_fun extern "C" void USART1_IRQHandler(void)
+#define EXTI1_fun extern "C" void EXTI1_IRQHandler(void)
 
 // Port类声明
 class Port
@@ -569,6 +570,13 @@ namespace System
         private:
             static void IWDG_Init(u8 prer, u16 rlr);
         };
+    };
+    class exitInterrput {
+      GPIO_TypeDef *const port;
+      uint16_t pin;
+      void (*callback)(void);
+      exitInterrput(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                    EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
     };
     namespace power
     {

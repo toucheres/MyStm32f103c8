@@ -8,11 +8,11 @@ Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
 USART1_fun { bluetooth.handleInterrupt(); }
-// 外部中断处理函数(PA1)
-extern "C" void EXTI1_IRQHandler(void)
+EXTI1_fun
 {
-  if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
-      EXTI_ClearITPendingBit(EXTI_Line1);
+    if (EXTI_GetITStatus(EXTI_Line1) != RESET)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line1);
     }
 }
 void bt_fun(Device::Bluetooth *bt)
