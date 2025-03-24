@@ -163,8 +163,7 @@ namespace Device
     }
 
     // 处理接收到的字符的辅助函数
-    void Device::Bluetooth::processReceivedChar(uint8_t data)
-    {
+    void Device::Bluetooth::processReceivedChar(uint8_t data) {
         // 如果是回车或换行符
         if (data == '\r' || data == '\n')
         {

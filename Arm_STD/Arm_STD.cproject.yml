@@ -29,6 +29,7 @@ project:
     - component: ARM::CMSIS Driver:USART:Custom
     - component: Keil::Device:StdPeriph Drivers:USART
     - component: Keil::Device:StdPeriph Drivers:PWR
+    - component: Keil::Device:StdPeriph Drivers:IWDG
 
   # List executable file formats to be generated.
   output:
