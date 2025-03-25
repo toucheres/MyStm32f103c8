@@ -1,4 +1,6 @@
 #include "MyStm32.h"
+#include "System.h"
+#include "Timer.h"
 #include "stm32f10x_rcc.h"
 
 // Port类静态成员实现
@@ -404,84 +406,62 @@ void Device::Timer::Universal_timer::TIM_Config(uint16_t ms_time)
     TIM_Cmd(BASIC_TIM, ENABLE);
 }
 
-// Device::LED类实现
-Device::LED::LED(GPIO_TypeDef *_port, uint16_t _pin,
-                 GPIOSpeed_TypeDef Speed, GPIOMode_TypeDef mode)
-    : pin(_pin), port(_port)
-{
-    // if (io.sign(_port, _pin))
-    {
-        clocks.open.port(_port);
-        GPIO_InitTypeDef GPIO_InitStructure;
-        GPIO_InitStructure.GPIO_Pin = pin;
-        GPIO_InitStructure.GPIO_Mode = mode;
-        GPIO_InitStructure.GPIO_Speed = Speed;
-        GPIO_Init(port, &GPIO_InitStructure);
-        io.Write_pin(port, pin, 0);
-    }
-}
-
-void Device::LED::turn()
-{
-    io.Change_pin(this->port, this->pin);
-}
-
-void System::delay(time_s time)
-{
-    for (uint16_t i = 0; i < time; i++)
-    {
-        delay(1000_ms);
-    }
-}
-void System::delay(time_ms time)
-{
-    for (uint16_t i = 0; i < time; i++)
-    {
-        delay(1000_us);
-    }
-}
-void System::delay(time_us time)
-{
-    SysTick->LOAD = 72 * time;  // 设置定时器重装值
-    SysTick->VAL = 0x00;        // 清空当前计数值
-    SysTick->CTRL = 0x00000005; // 设置时钟源为HCLK，启动定时器
-    while (!(SysTick->CTRL & 0x00010000))
-        ;                       // 等待计数到0
-    SysTick->CTRL = 0x00000004; // 关闭定时器
-}
-// 409500us 精度100us
-void System::WatchDog::IndependWatchDog::setTime(time_us timeus) {
-    IWDG_Init(0, 10000*timeus);
-}
-// 1628ms 精度:1/2500s(0.4ms)
-void System::WatchDog::IndependWatchDog::setTime(time_ms timems) {
-    IWDG_Init(2, 2500 * timems);
-}
-// LSI时钟频率：典型值约40KHz（实际范围为30-60KHz）下
-// 预分频值最高为6（系数为4095）
-// 最大重装载值4095
-// max--26.21秒
-// 精度1/156s(0.006s)
-void System::WatchDog::IndependWatchDog::setTime(time_s times) {
-  IWDG_Init(6, 156 * times);
-}
+// void System::delay(time_s time)
+// {
+//     for (uint16_t i = 0; i < time; i++)
+//     {
+//         delay(1000_ms);
+//     }
+// }
+// void System::delay(time_ms time)
+// {
+//     for (uint16_t i = 0; i < time; i++)
+//     {
+//         delay(1000_us);
+//     }
+// }
+// void System::delay(time_us time)
+// {
+//     SysTick->LOAD = 72 * time;  // 设置定时器重装值
+//     SysTick->VAL = 0x00;        // 清空当前计数值
+//     SysTick->CTRL = 0x00000005; // 设置时钟源为HCLK，启动定时器
+//     while (!(SysTick->CTRL & 0x00010000))
+//         ;                       // 等待计数到0
+//     SysTick->CTRL = 0x00000004; // 关闭定时器
+// }
+// // 409500us 精度100us
+// void System::WatchDog::IndependWatchDog::setTime(time_us timeus) {
+//     IWDG_Init(0, 10000*timeus);
+// }
+// // 1628ms 精度:1/2500s(0.4ms)
+// void System::WatchDog::IndependWatchDog::setTime(time_ms timems) {
+//     IWDG_Init(2, 2500 * timems);
+// }
+// // LSI时钟频率：典型值约40KHz（实际范围为30-60KHz）下
+// // 预分频值最高为6（系数为4095）
+// // 最大重装载值4095
+// // max--26.21秒
+// // 精度1/156s(0.006s)
+// void System::WatchDog::IndependWatchDog::setTime(time_s times) {
+//   IWDG_Init(6, 156 * times);
+// }
 
 
-void System::WatchDog::IndependWatchDog::feed(void) {
-    IWDG_ReloadCounter();
-}
+// void System::WatchDog::IndependWatchDog::feed(void) {
+//     IWDG_ReloadCounter();
+// }
 
-void System::WatchDog::IndependWatchDog::IWDG_Init(u8 prer, u16 rlr)
-{
+// void System::WatchDog::IndependWatchDog::IWDG_Init(u8 prer, u16 rlr)
+// {
 
-    // 1、取消寄存器写保护 写0x5555
-    IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-    // 2、设置独立看门狗预分频系数
-    IWDG_SetPrescaler(prer);
-    // 3、设置独立看门狗重装载值
-    IWDG_SetReload(rlr);
-    // 4、重载计数值喂狗 写0xAAAA
-    IWDG_ReloadCounter();
-    // 5、启动看门狗     写0xCCCC
-    IWDG_Enable();
-}
+//     // 1、取消寄存器写保护 写0x5555
+//     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+//     // 2、设置独立看门狗预分频系数
+//     IWDG_SetPrescaler(prer);
+//     // 3、设置独立看门狗重装载值
+//     IWDG_SetReload(rlr);
+//     // 4、重载计数值喂狗 写0xAAAA
+//     IWDG_ReloadCounter();
+//     // 5、启动看门狗     写0xCCCC
+//     IWDG_Enable();
+// }

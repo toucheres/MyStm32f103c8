@@ -1,7 +1,23 @@
-#include "MyStm32.h"
+#include "Bluetooth.h"
+#include "System.h"
 #include "stm32f10x_usart.h"
+#include <cstdio>
 #include <stdarg.h>
 #include <string.h>
+
+// 如果平台不支持strcasecmp，添加自定义实现
+// 这是一个辅助函数，提供不区分大小写的字符串比较
+// #ifndef strcasecmp
+// int strcasecmp(const char *s1, const char *s2)
+// {
+//     while (*s1 && ((*s1 | 32) == (*s2 | 32)))
+//     {
+//         s1++;
+//         s2++;
+//     }
+//     return (*s1 | 32) - (*s2 | 32);
+// }
+// #endif
 
 namespace Device
 {

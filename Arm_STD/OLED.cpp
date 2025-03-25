@@ -1,10 +1,12 @@
-#include "MyStm32.h"
+#include "OLED.h"
+#include <cstdio>
 extern "C"
 {
 #include "OLED_Data.h"
 }
 #include <stdarg.h>
 #include <string.h>
+#include <math.h>
 // Device::OLED类实现 - 基础部分
 Device::OLED::OLED(GPIO_TypeDef *_SCL_port, uint16_t _SCL_pin,
                    GPIO_TypeDef *_SDA_port, uint16_t _SDA_pin)

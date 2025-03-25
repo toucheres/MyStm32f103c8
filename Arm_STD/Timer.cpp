@@ -1,4 +1,6 @@
+#include "Timer.h"
 #include "MyStm32.h"
+
 Device::Timer::Channal::Channal(uint8_t _timer, uint8_t _index)
     : timer(_timer), index(_index) {}
 

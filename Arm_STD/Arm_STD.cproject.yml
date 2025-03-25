@@ -12,10 +12,9 @@ project:
         - file: ./OLED.cpp
         - file: ./PWM.cpp
         - file: ./Bluetooth.cpp
-        # - file: ./MyStm32.cpp
+        - file: ./LED.cpp
+        - file: ./System.cpp
 
-        # List components to use for your application.
-        # A software component is a re-usable unit that may be configurable.
   components:
     - component: ARM::CMSIS:CORE
     - component: Device:Startup
