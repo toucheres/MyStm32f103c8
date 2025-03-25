@@ -3,7 +3,7 @@
 
 #include "stm32f10x.h"
 #include <cstdint>
-
+#include "Interrupt.hpp"
 namespace Device
 {
     class Bluetooth
@@ -60,6 +60,7 @@ namespace Device
 
         // 中断处理函数
         void handleInterrupt();
+        void setInterrupt();
 
         // 接收缓冲区，增大到64字节
         char rxBuffer[64];

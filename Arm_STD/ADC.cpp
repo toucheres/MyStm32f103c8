@@ -1,4 +1,4 @@
-#include "MyStm32.h"
+//#include "MyStm32.h"
 #include "ADC.h"
 #include "stm32f10x_adc.h"
 #include "stm32f10x_rcc.h"

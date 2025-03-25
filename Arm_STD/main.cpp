@@ -1,16 +1,7 @@
 #include "RTE_Components.h"
-#include "stm32f10x_exti.h"
-#include <cstdio>
 #include CMSIS_device_header
-#include "MyStm32.h"
-#include "Bluetooth.h"
-#include "LED.h"
-#include "OLED.h"
-#include "ADC.h"
-#include "Timer.h"
-#include "PWM.h"
-#include "System.h" // 添加System头文件
-#include <string.h>
+#include "MyStm32Core.h"
+#include "Interrupt.hpp"
 
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
@@ -23,6 +14,7 @@ EXTI1_fun
         EXTI_ClearITPendingBit(EXTI_Line1);
     }
 }
+
 void bt_fun(Device::Bluetooth *bt)
 {
     oled.Clear();

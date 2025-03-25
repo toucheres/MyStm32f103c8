@@ -1,5 +1,5 @@
 #include "PWM.h"
-#include "MyStm32.h"
+//#include "MyStm32.h"
 
 Device::PWM::PWM(uint8_t timertype, uint8_t _channals)
     : timer(timertype), channals(_channals), frequency(1000)
