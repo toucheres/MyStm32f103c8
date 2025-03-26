@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <stdarg.h>
 #include <string.h>
-
+#include "Interrupt.h"
 // 如果平台不支持strcasecmp，添加自定义实现
 // 这是一个辅助函数，提供不区分大小写的字符串比较
 // #ifndef strcasecmp
@@ -126,6 +126,7 @@ namespace Device
 
         // 使能USART
         USART_Cmd(USARTx, ENABLE);
+        this->setInterrupt();
     }
 
     // 发送单个字节
@@ -199,7 +200,7 @@ namespace Device
                 hasNewData = true;
                 if (callback)
                 {
-                    callback(this);
+                    callback();
                 }
             }
             // 如果是空命令，直接忽略
@@ -361,24 +362,24 @@ namespace Device
         }
     }
 
-    // void Bluetooth::setInterrupt()
-    // {
-    //     uint16_t interruptType = 0;
-    //     if (this->USARTx == USART1)
-    //     {
-    //         interruptType = System::Interrupt::Type::USART1_IRQHand;
-    //     }
-    //     else if (this->USARTx == USART2)
-    //     {
-    //         interruptType = System::Interrupt::Type::USART2_IRQHand;
-    //     }
-    //     else if (this->USARTx == USART3)
-    //     {
-    //         interruptType = System::Interrupt::Type::USART3_IRQHand;
-    //     }
-    //     System::Interrupt::registerHandler(
-    //         interruptType, [](void *self) { ((Bluetooth *)self)->handleInterrupt(); });
-    // }
+    void Bluetooth::setInterrupt()
+    {
+        uint16_t interruptType = 0;
+        if (this->USARTx == USART1)
+        {
+            interruptType = System::Interrupt::Type::USART1_IRQHand;
+        }
+        else if (this->USARTx == USART2)
+        {
+            interruptType = System::Interrupt::Type::USART2_IRQHand;
+        }
+        else if (this->USARTx == USART3)
+        {
+            interruptType = System::Interrupt::Type::USART3_IRQHand;
+        }
+        System::Interrupt::registerHandler(
+            interruptType, [](void *self) { ((Bluetooth *)self)->handleInterrupt(); },this);
+    }
 
     // 获取缓冲区内容
     const char *Bluetooth::getBuffer() const

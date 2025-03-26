@@ -33,13 +33,14 @@ namespace System
             USART2_IRQHand,
             USART3_IRQHand,
 
-            // DMA1_Channel1_IRQHand,
-            // DMA1_Channel2_IRQHand,
-            // DMA1_Channel3_IRQHand,
-            // DMA1_Channel4_IRQHand,
-            // DMA1_Channel5_IRQHand,
-            // DMA1_Channel6_IRQHand,
-            // DMA1_Channel7_IRQHand,
+            // DMA中断在DMA_STM32F10x.c已被定义
+            //  DMA1_Channel1_IRQHand,
+            //  DMA1_Channel2_IRQHand,
+            //  DMA1_Channel3_IRQHand,
+            //  DMA1_Channel4_IRQHand,
+            //  DMA1_Channel5_IRQHand,
+            //  DMA1_Channel6_IRQHand,
+            //  DMA1_Channel7_IRQHand,
             ADC1_2_IRQHand,
 
             RTCAlarm_IRQHand,
@@ -58,12 +59,12 @@ namespace System
         };
 
         // typedef void (*callback)(void *);
-        class callback
-        {
+        class callback {
+        public:
             void (*fun)(void *);
             void *arg;
 
-        public:
+
             callback()
             {
                 this->fun = nullptr;

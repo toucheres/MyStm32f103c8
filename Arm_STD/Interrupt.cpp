@@ -1,7 +1,7 @@
 #include "Interrupt.h"
 // 实现所有中断处理函数
 System::Interrupt::callback System::Interrupt::interrupts[NUM_Type] = {nullptr};
-void System::Interrupt::registerHandler(std::uint16_t type, void (*fun)(void *),
+void System::Interrupt::registerHandler(uint16_t type, void (*fun)(void *),
                                         void *arg)
 {
     System::Interrupt::interrupts[type] = callback(fun, arg);

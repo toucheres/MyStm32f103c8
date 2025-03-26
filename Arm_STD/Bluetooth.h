@@ -3,6 +3,7 @@
 
 #include "stm32f10x.h"
 #include <cstdint>
+#include "Interrupt.h"
 namespace Device
 {
     class Bluetooth
@@ -16,7 +17,8 @@ namespace Device
         void processReceivedChar(uint8_t data);
 
     public:
-        void (*callback)(Bluetooth *self) = nullptr;
+        // void (*callback)(Bluetooth *self) = nullptr;
+        System::Interrupt::callback callback{nullptr, this};
         // 构造函数
         Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate);
 
@@ -35,10 +37,10 @@ namespace Device
         void receiveData(uint8_t *buffer, uint16_t len);
         bool equal(const char *const in);
         bool equal_case(const char *const in);
-        
+
         // 获取最后接收的完整行数据
         char *getLastData();
-        
+
         // 获取接收缓冲区内容
         const char *getBuffer() const;
 
