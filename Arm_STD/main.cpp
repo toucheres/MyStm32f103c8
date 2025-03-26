@@ -11,9 +11,9 @@
 #include "PWM.h"
 #include "System.h" // 添加System头文件
 #include <string.h>
-//#include "Interrupt.hpp"
+#include "Interrupt.h"
 
-// Device::LED led{Port::A, Pin::Pin0};
+Device::LED led{Port::A, Pin::Pin0};
 // Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 // Device::Bluetooth bluetooth{USART1, 9600};
 // USART1_fun { bluetooth.handleInterrupt(); }
@@ -82,7 +82,7 @@
 //         bt->sendString("Unknown command\r\n");
 //     }
 
-//     // 重置标志并清空缓冲区，准备接收下一条命令
+//     // 重置标志并清空缓冲区，准备接 收下一条命令
 //     bt->clear();
 //     bt->hasNewData = false;
 // }
@@ -102,6 +102,8 @@ int main(void)
     // 主循环 - 正式代码
     while (1)
     {
+        System::delay(1_s);
+        led.turn();
         // // 显示即将进入STOP模式
         // oled.Clear();
         // oled.ShowString(0, 0, "Entering STOP", Device::OLED::OLED_8X16);
@@ -139,9 +141,5 @@ int main(void)
 
         // // 显示一段时间后再次进入循环
         // System::delay(200_ms);
-        for (volatile int i = 0; i < 100; i++)
-        {
-            ;
-        }
     }
 }
