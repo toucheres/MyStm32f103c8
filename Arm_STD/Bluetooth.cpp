@@ -361,24 +361,24 @@ namespace Device
         }
     }
 
-    void Bluetooth::setInterrupt()
-    {
-        uint16_t interruptType = 0;
-        if (this->USARTx == USART1)
-        {
-            interruptType = System::Interrupt::Type::USART1_IRQHand;
-        }
-        else if (this->USARTx == USART2)
-        {
-            interruptType = System::Interrupt::Type::USART2_IRQHand;
-        }
-        else if (this->USARTx == USART3)
-        {
-            interruptType = System::Interrupt::Type::USART3_IRQHand;
-        }
-        System::Interrupt::registerHandler(
-            interruptType, [](void *self) { ((Bluetooth *)self)->handleInterrupt(); });
-    }
+    // void Bluetooth::setInterrupt()
+    // {
+    //     uint16_t interruptType = 0;
+    //     if (this->USARTx == USART1)
+    //     {
+    //         interruptType = System::Interrupt::Type::USART1_IRQHand;
+    //     }
+    //     else if (this->USARTx == USART2)
+    //     {
+    //         interruptType = System::Interrupt::Type::USART2_IRQHand;
+    //     }
+    //     else if (this->USARTx == USART3)
+    //     {
+    //         interruptType = System::Interrupt::Type::USART3_IRQHand;
+    //     }
+    //     System::Interrupt::registerHandler(
+    //         interruptType, [](void *self) { ((Bluetooth *)self)->handleInterrupt(); });
+    // }
 
     // 获取缓冲区内容
     const char *Bluetooth::getBuffer() const

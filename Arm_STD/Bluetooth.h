@@ -3,7 +3,6 @@
 
 #include "stm32f10x.h"
 #include <cstdint>
-#include "Interrupt.hpp"
 namespace Device
 {
     class Bluetooth
