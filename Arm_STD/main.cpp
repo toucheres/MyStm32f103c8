@@ -15,8 +15,8 @@
 
 Device::LED led{Port::A, Pin::Pin0};
 // Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
-// Device::Bluetooth bluetooth{USART1, 9600};
-// USART1_fun { bluetooth.handleInterrupt(); }
+Device::Bluetooth bluetooth{USART1, 9600};
+USART1_fun { bluetooth.handleInterrupt(); }
 // EXTI1_fun
 // {
 //     if (EXTI_GetITStatus(EXTI_Line1) != RESET)
@@ -94,7 +94,7 @@ int main(void)
 
     // // 外设初始化
     // oled.Init();
-    // bluetooth.init();
+    bluetooth.init();
 
     // size_t i = 0;
     // bool testMode = false; // 设置为true启用PA1测试模式
@@ -104,6 +104,7 @@ int main(void)
     {
         System::delay(1_s);
         led.turn();
+        bluetooth.sendString("test");
         // // 显示即将进入STOP模式
         // oled.Clear();
         // oled.ShowString(0, 0, "Entering STOP", Device::OLED::OLED_8X16);

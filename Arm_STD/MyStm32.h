@@ -8,7 +8,7 @@
 #define timer2_fun extern "C" void TIM2_IRQHandler(void)
 #define timer3_fun extern "C" void TIM3_IRQHandler(void)
 #define timer4_fun extern "C" void TIM4_IRQHandler(void)
-#define USART1_fun extern "C" void USART1_IRQHandler(void)
+//#define USART1_fun extern "C" void USART1_IRQHandler(void)
 #define EXTI1_fun extern "C" void EXTI1_IRQHandler(void)
 
 // Port类声明
