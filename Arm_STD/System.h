@@ -42,11 +42,15 @@ namespace System
         void sleep_for_event();
         void stop();
         void stop_lpPowerControl();
+        void setEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                           EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
         void configEXTIForWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                                EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
-        void stopWithEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                               EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
-        void standby();
+                                               EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
+        void stop(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                  EXTITrigger_TypeDef Trigger);
+            // void stopWithEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+            //                        EXTITrigger_TypeDef Trigger = EXTI_Trigger_Falling);
+            void standby();
     }
 } // namespace System
 

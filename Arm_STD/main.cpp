@@ -1,5 +1,6 @@
 #include "RTE_Components.h"
 #include <cstdio>
+#include <cstdlib>
 #include CMSIS_device_header
 #include "MyStm32.h"
 #include "Bluetooth.h"
@@ -88,13 +89,12 @@ int main(void)
 
     // 外设初始化
 
-    
     oled.Init();
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
 
     size_t i = 0;
-
+    System::power::setEXTIWakeup(Port::A,Pin::Pin1);
     // 主循环 - 正式代码
     while (1)
     {
@@ -112,8 +112,7 @@ int main(void)
         System::delay(500_ms);
 
         // 进入STOP模式，明确指定下降沿触发
-        System::power::stopWithEXTIWakeup(GPIOA, GPIO_Pin_1, EXTI_Trigger_Falling);
-
+        System::power::stop();
         // 下面的代码只有在唤醒后才会执行
         i++; // 增加计数
 

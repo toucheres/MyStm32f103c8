@@ -181,19 +181,25 @@ namespace System
             NVIC_Init(&NVIC_InitStructure);
         }
 
-        void stopWithEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                                EXTITrigger_TypeDef Trigger)
+        void setEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                           EXTITrigger_TypeDef Trigger)
         {
             // 配置外部中断
+
             configEXTIForWakeup(GPIOx, GPIO_Pin, Trigger);
-            static uint16_t GPIO_Pin_Wakable = GPIO_Pin;
+            uint16_t GPIO_Pin_Wakable = GPIO_Pin;
             uint16_t interruptType = System::Interrupt::formGPIOPIN2InterruptType(GPIO_Pin);
-            System::Interrupt::registerHandler(interruptType, [](void *)
+            System::Interrupt::registerHandler(interruptType, [](void *pin)
                                                {
-              if (EXTI_GetITStatus(GPIO_Pin_Wakable) != RESET)
+              if (EXTI_GetITStatus(static_cast<uint16_t>(reinterpret_cast<uintptr_t>(pin))) != RESET)
               {
-                  EXTI_ClearITPendingBit(GPIO_Pin_Wakable);
-              } });
+                  EXTI_ClearITPendingBit(static_cast<uint16_t>(reinterpret_cast<uintptr_t>(pin)));
+              } }, reinterpret_cast<void *>(static_cast<uintptr_t>(GPIO_Pin)));
+        }
+        void stop(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                  EXTITrigger_TypeDef Trigger)
+        {
+
             // 使能PWR时钟
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 
