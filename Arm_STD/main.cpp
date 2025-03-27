@@ -143,8 +143,21 @@ int main(void)
     // bluetooth.callback.arg = &bluetooth;
 
     // 初始化RTC - 使用外部32.768kHz晶振
+    if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
+    {
+        oled.Clear();
+        oled.ShowString(0, 0, "TRY SEC FLAG ON", Device::OLED::OLED_8X16);
+        oled.Update();
+        System::delay(1000_ms);
+    }
     bool isFirstConfig = rtc.init(System::rtc_clock::LSE);
-
+    if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
+    {
+        oled.Clear();
+        oled.ShowString(0, 0, "SEC FLAG ON", Device::OLED::OLED_8X16);
+        oled.Update();
+        System::delay(1000_ms);
+    }
     // 首次配置时设置日期和时间
     if (isFirstConfig)
     {
@@ -157,7 +170,7 @@ int main(void)
         // 设置一个闹钟示例
         rtc.setAlarm(12, 1, 0); // 设置为1分钟后
     }
-
+    System::delay(1_s);
     // 注册秒中断回调
     rtc.setSecondCallback(onSecondTick, nullptr);
     rtc.enableSecondInterrupt(true);
@@ -227,7 +240,7 @@ int main(void)
         if (!updateDisplay && !bluetooth.hasNewData)
         {
             // 进入睡眠模式，可被RTC闹钟或其他中断唤醒
-            System::power::sleep_for_interrupt();
+            // System::power::sleep_for_interrupt();
         }
 
         // 处理蓝牙接收
@@ -237,3 +250,6 @@ int main(void)
         }
     }
 }
+//debug   27000
+//release 19500
+//size    15000

@@ -122,7 +122,10 @@ bool System::rtc_clock::init(ClockSource source)
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
-
+    RTC_WaitForSynchro();
+    RTC_ClearITPendingBit(RTC_IT_SEC);
+    RTC_ClearITPendingBit(RTC_IT_ALR);
+    RTC_ClearITPendingBit(RTC_IT_OW);
     configured = true;
     return firstConfig;
 }
@@ -308,26 +311,55 @@ void System::rtc_clock::setAlarmCallback(void (*callback)(void *), void *arg)
 // 启用秒中断
 void System::rtc_clock::enableSecondInterrupt(bool enable)
 {
-    if (enable)
-    {
-        // 使能RTC秒中断
-        RTC_ITConfig(RTC_IT_SEC, ENABLE);
-        // 注册秒中断处理函数
-        System::Interrupt::registerHandler(System::Interrupt::RTC_IRQHand,
-                                           [](void *)
-                                           {
-                                               if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
-                                               {
-                                                   if (secondCallback)
-                                                       secondCallback();
-                                                   RTC_ClearITPendingBit(RTC_IT_SEC);
-                                               }
-                                           });
-    }
-    else
-    {
-        RTC_ITConfig(RTC_IT_SEC, DISABLE);
-    }
+  // if (enable)
+  // {
+  //     // 使能RTC秒中断
+  //     RTC_ITConfig(RTC_IT_SEC, ENABLE);
+  //     // 注册秒中断处理函数
+  //     System::Interrupt::registerHandler(System::Interrupt::RTC_IRQHand,
+  //                                        [](void *)
+  //                                        {
+  //                                            if (RTC_GetITStatus(RTC_IT_SEC)
+  //                                            != RESET)
+  //                                            {
+  //                                                if (secondCallback)
+  //                                                    secondCallback();
+  //                                                RTC_ClearITPendingBit(RTC_IT_SEC);
+  //                                            }
+  //                                        });
+  // }
+  // else
+  // {
+  //     RTC_ITConfig(RTC_IT_SEC, DISABLE);
+  // }
+  if (enable)
+  {
+      // 先清除可能存在的秒中断标志位
+      RTC_ClearITPendingBit(RTC_IT_SEC);
+
+      // 先注册中断处理函数，再使能中断
+      System::Interrupt::registerHandler(System::Interrupt::RTC_IRQHand,
+                                         [](void *)
+                                         {
+                                             if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
+                                             {
+                                                 if (secondCallback)
+                                                     secondCallback();
+                                                 RTC_ClearITPendingBit(RTC_IT_SEC);
+                                             }
+                                         });
+
+      // 暂停一小段时间确保注册完成
+      for (volatile int i = 0; i < 1000; i++)
+          ;
+
+      // 最后使能RTC秒中断
+      RTC_ITConfig(RTC_IT_SEC, ENABLE);
+  }
+  else
+  {
+      RTC_ITConfig(RTC_IT_SEC, DISABLE);
+  }
 }
 
 // 辅助函数 - 将日期时间转换为计数器值
