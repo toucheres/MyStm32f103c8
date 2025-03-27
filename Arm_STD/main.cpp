@@ -11,18 +11,11 @@
 #include "System.h" // 添加System头文件
 #include <string.h>
 #include "Interrupt.h"
+// 在main.cpp中添加
 
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
-// USART1_fun { bluetooth.handleInterrupt(); }
-// EXTI1_fun
-// {
-//     if (EXTI_GetITStatus(EXTI_Line1) != RESET)
-//     {
-//         EXTI_ClearITPendingBit(EXTI_Line1);
-//     }
-// }
 void bt_fun(void *in)
 {
     Device::Bluetooth *bt = (Device::Bluetooth *)(in);
@@ -86,19 +79,21 @@ void bt_fun(void *in)
     bt->clear();
     bt->hasNewData = false;
 }
+
 // 修改main循环，使用蓝牙类的缓冲区
 int main(void)
 {
     // // 系统初始化
     // SystemInit();
 
-    // // 外设初始化
+    // 外设初始化
+
+    
     oled.Init();
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
 
-    // size_t i = 0;
-    // bool testMode = false; // 设置为true启用PA1测试模式
+    size_t i = 0;
 
     // 主循环 - 正式代码
     while (1)
@@ -106,42 +101,42 @@ int main(void)
         System::delay(1_s);
         led.turn();
         bluetooth.sendString("test");
-        // // 显示即将进入STOP模式
-        // oled.Clear();
-        // oled.ShowString(0, 0, "Entering STOP", Device::OLED::OLED_8X16);
-        // oled.ShowString(0, 16, "Press PA1->Wake", Device::OLED::OLED_6X8);
-        // oled.Update();
-        // bluetooth.printf("Entering STOP mode, loop:%d\r\n", i);
+        // 显示即将进入STOP模式
+        oled.Clear();
+        oled.ShowString(0, 0, "Entering STOP", Device::OLED::OLED_8X16);
+        oled.ShowString(0, 16, "Press PA1->Wake", Device::OLED::OLED_6X8);
+        oled.Update();
+        bluetooth.printf("Entering STOP mode, loop:%d\r\n", i);
 
-        // // 延时确保消息发送完成
-        // System::delay(500_ms);
+        // 延时确保消息发送完成
+        System::delay(500_ms);
 
-        // // 进入STOP模式，明确指定下降沿触发
-        // System::power::stopWithEXTIWakeup(GPIOA, GPIO_Pin_1, EXTI_Trigger_Falling);
+        // 进入STOP模式，明确指定下降沿触发
+        System::power::stopWithEXTIWakeup(GPIOA, GPIO_Pin_1, EXTI_Trigger_Falling);
 
-        // // 下面的代码只有在唤醒后才会执行
-        // i++; // 增加计数
+        // 下面的代码只有在唤醒后才会执行
+        i++; // 增加计数
 
-        // // 唤醒后重新初始化系统
-        // SystemInit();         // 重新配置系统时钟
-        // System::delay(10_ms); // 给系统时钟一些稳定时间
+        // 唤醒后重新初始化系统
+        SystemInit();         // 重新配置系统时钟
+        System::delay(10_ms); // 给系统时钟一些稳定时间
 
-        // // 重新初始化外设
-        // oled.Init();
-        // bluetooth.init();
+        // 重新初始化外设
+        oled.Init();
+        bluetooth.init();
 
-        // // 显示唤醒成功信息
-        // oled.Clear();
-        // oled.ShowString(0, 0, "Wakeup Success!", Device::OLED::OLED_8X16);
+        // 显示唤醒成功信息
+        oled.Clear();
+        oled.ShowString(0, 0, "Wakeup Success!", Device::OLED::OLED_8X16);
 
-        // char loopStr[32];
-        // sprintf(loopStr, "Loop: %u", i);
-        // oled.ShowString(0, 16, loopStr, Device::OLED::OLED_6X8);
-        // oled.Update();
+        char loopStr[32];
+        sprintf(loopStr, "Loop: %u", i);
+        oled.ShowString(0, 16, loopStr, Device::OLED::OLED_6X8);
+        oled.Update();
 
-        // bluetooth.printf("Wakeup Success! loop:%d\r\n", i);
+        bluetooth.printf("Wakeup Success! loop:%d\r\n", i);
 
-        // // 显示一段时间后再次进入循环
-        // System::delay(200_ms);
+        // 显示一段时间后再次进入循环
+        System::delay(200_ms);
     }
 }

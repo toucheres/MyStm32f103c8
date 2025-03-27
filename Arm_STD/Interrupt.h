@@ -82,7 +82,9 @@ namespace System
                     this->fun(this->arg);
             }
         };
-        static callback interrupts[NUM_Type]; // 1
+        static callback interrupts[NUM_Type];
+        static uint16_t formGPIOPIN2InterruptType(uint16_t GPIO_Pin);
+        // 1
         static void registerHandler(uint16_t type, void (*fun)(void *), void *arg = nullptr);
         // 过
         // 1 不过

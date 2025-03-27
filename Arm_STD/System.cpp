@@ -2,7 +2,7 @@
 #include "stm32f10x_pwr.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_iwdg.h"
-
+#include "Interrupt.h"
 namespace System
 {
     void delay(time_s time)
@@ -32,12 +32,14 @@ namespace System
     }
 
     // 409500us 精度100us
-    void WatchDog::IndependWatchDog::setTime(time_us timeus) {
+    void WatchDog::IndependWatchDog::setTime(time_us timeus)
+    {
         IWDG_Init(0, 10000 * timeus);
     }
 
     // 1628ms 精度:1/2500s(0.4ms)
-    void WatchDog::IndependWatchDog::setTime(time_ms timems) {
+    void WatchDog::IndependWatchDog::setTime(time_ms timems)
+    {
         IWDG_Init(2, 2500 * timems);
     }
 
@@ -46,11 +48,13 @@ namespace System
     // 最大重装载值4095
     // max--26.21秒
     // 精度1/156s(0.006s)
-    void WatchDog::IndependWatchDog::setTime(time_s times) {
+    void WatchDog::IndependWatchDog::setTime(time_s times)
+    {
         IWDG_Init(6, 156 * times);
     }
 
-    void WatchDog::IndependWatchDog::feed(void) {
+    void WatchDog::IndependWatchDog::feed(void)
+    {
         IWDG_ReloadCounter();
     }
 
@@ -71,14 +75,16 @@ namespace System
     // power namespace实现
     namespace power
     {
-        void sleep_for_interrupt() { 
-            __WFI(); 
+        void sleep_for_interrupt()
+        {
+            __WFI();
         }
-        
-        void sleep_for_event() { 
-            __WFE(); 
+
+        void sleep_for_event()
+        {
+            __WFE();
         }
-        
+
         void stop()
         {
             // 使能PWR时钟
@@ -88,7 +94,7 @@ namespace System
             // 设置电压调节器模式
             PWR_EnterSTOPMode(PWR_Regulator_ON, PWR_STOPEntry_WFI);
         }
-        
+
         void stop_lpPowerControl()
         {
             // 使能PWR时钟
@@ -98,9 +104,9 @@ namespace System
             // 设置低功耗电压调节器模式
             PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
         }
-        
+
         void configEXTIForWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                                EXTITrigger_TypeDef Trigger)
+                                 EXTITrigger_TypeDef Trigger)
         {
             // 使能GPIO和AFIO时钟
             if (GPIOx == GPIOA)
@@ -111,7 +117,6 @@ namespace System
                 RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 
             RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-
             // 初始化GPIO为输入模式
             GPIO_InitTypeDef GPIO_InitStructure;
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin;
@@ -175,13 +180,20 @@ namespace System
             NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
             NVIC_Init(&NVIC_InitStructure);
         }
-        
+
         void stopWithEXTIWakeup(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                               EXTITrigger_TypeDef Trigger)
+                                EXTITrigger_TypeDef Trigger)
         {
             // 配置外部中断
             configEXTIForWakeup(GPIOx, GPIO_Pin, Trigger);
-
+            static uint16_t GPIO_Pin_Wakable = GPIO_Pin;
+            uint16_t interruptType = System::Interrupt::formGPIOPIN2InterruptType(GPIO_Pin);
+            System::Interrupt::registerHandler(interruptType, [](void *)
+                                               {
+              if (EXTI_GetITStatus(GPIO_Pin_Wakable) != RESET)
+              {
+                  EXTI_ClearITPendingBit(GPIO_Pin_Wakable);
+              } });
             // 使能PWR时钟
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 
@@ -194,7 +206,7 @@ namespace System
             // 唤醒后需要重新配置系统时钟
             SystemInit();
         }
-        
+
         void standby()
         {
             // 使能PWR时钟

@@ -1,10 +1,41 @@
 #include "Interrupt.h"
 // 实现所有中断处理函数
 System::Interrupt::callback System::Interrupt::interrupts[NUM_Type] = {nullptr};
+uint16_t System::Interrupt::formGPIOPIN2InterruptType(uint16_t GPIO_Pin)
+{ // 查找引脚位置
+    uint8_t pinPosition = 0;
+    for (uint8_t i = 0; i < 16; i++)
+    {
+        if (GPIO_Pin == (1 << i))
+        {
+            pinPosition = i;
+            break;
+        }
+    }
+
+    // 根据引脚位置确定中断类型
+    if (pinPosition <= 4)
+    {
+        // EXTI0 - EXTI4 对应单独的中断类型
+        return static_cast<uint16_t>(EXTI0_IRQHand + pinPosition);
+    }
+    else if (pinPosition <= 9)
+    {
+        // EXTI5 - EXTI9 共享EXTI9_5中断
+        return static_cast<uint16_t>(EXTI9_5_IRQHand);
+    }
+    else if (pinPosition <= 15)
+    {
+        // EXTI10 - EXTI15 共享EXTI15_10中断
+        return static_cast<uint16_t>(EXTI15_10_IRQHand);
+    }
+
+    // 无效的引脚值
+    return 0xFFFF;
+}
 void System::Interrupt::registerHandler(uint16_t type, void (*fun)(void *),
-                                        void *arg)
-{
-    System::Interrupt::interrupts[type] = callback(fun, arg);
+                                        void *arg) {
+  System::Interrupt::interrupts[type] = callback(fun, arg);
 }
 extern "C"
 {
