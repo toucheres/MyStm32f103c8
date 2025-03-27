@@ -1,3 +1,4 @@
+// filepath: [main.cpp](http://_vscodecontentref_/1)
 #include "RTE_Components.h"
 #include <cstdio>
 #include <cstdlib>
@@ -9,133 +10,230 @@
 #include "ADC.h"
 #include "Timer.h"
 #include "PWM.h"
-#include "System.h" // 添加System头文件
+#include "System.h"
 #include <string.h>
 #include "Interrupt.h"
-// 在main.cpp中添加
+#include "RTC.h"
 
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
+System::rtc_clock rtc; // 创建RTC实例
+
+char timeStr[20];           // 用于格式化时间字符串
+bool updateDisplay = false; // 时间更新标志
+
+// 秒中断回调 - 每秒执行一次
+void onSecondTick(void *)
+{
+    // 获取当前时间
+    uint8_t hours, minutes, seconds;
+    rtc.getTime(hours, minutes, seconds);
+
+    // 格式化时间字符串
+    sprintf(timeStr, "%02d:%02d:%02d", hours, minutes, seconds);
+
+    // 翻转LED状态，实现1Hz闪烁
+    led.turn();
+
+    // 设置显示更新标志
+    updateDisplay = true;
+}
+
+// 闹钟中断回调
+void onAlarm(void *)
+{
+    // 显示闹钟触发消息
+    oled.Clear();
+    oled.ShowString(0, 0, "ALARM!", Device::OLED::OLED_8X16);
+    oled.ShowString(0, 16, "Wake up time!", Device::OLED::OLED_8X16);
+    oled.Update();
+
+    // 通过蓝牙发送闹钟消息
+    bluetooth.sendString("ALARM TRIGGERED!\r\n");
+
+    // 清除闹钟标志
+    rtc.clearAlarmFlag();
+}
+
+// 处理蓝牙命令
 void bt_fun(void *in)
 {
     Device::Bluetooth *bt = (Device::Bluetooth *)(in);
-    oled.Clear();
-    oled.ShowString(0, 0, "Received:", Device::OLED::OLED_6X8);
-    oled.ShowString(0, 16, bt->getBuffer(), Device::OLED::OLED_8X16);
 
-    // 添加调试信息，显示命令的十六进制值
-    char debug_str[64];
-    sprintf(debug_str, "Len:%d", strlen(bt->getBuffer()));
-    oled.ShowString(0, 32, debug_str, Device::OLED::OLED_6X8);
-
-    oled.Update();
-
-    // 使用format方法发送确认消息
-    bt->printf("Received: \"%s\" (length: %d)\r\n",
-               bt->getBuffer(),
-               strlen(bt->getBuffer()));
-
-    // 使用更灵活的命令比较方式
-    if (bt->equal("Clear"))
+    // 处理标准命令
+    if (bt->equal_case("time"))
     {
-        bt->printf("Command: Clear executed at count %lu\r\n", 1);
-        bt->clear();
+        // 获取当前时间
+        uint8_t hours, minutes, seconds;
+        rtc.getTime(hours, minutes, seconds);
 
-        // 确认命令执行的视觉反馈
-        oled.Clear();
-        oled.ShowString(0, 0, "Clear command", Device::OLED::OLED_8X16);
-        oled.ShowString(0, 16, "executed!", Device::OLED::OLED_8X16);
-        oled.Update();
+        // 获取当前日期
+        uint8_t day, month, weekday;
+        uint16_t year;
+        rtc.getDate(day, month, year, weekday);
+
+        // 发送时间日期信息
+        bt->printf("Current Time: %02d:%02d:%02d\r\n", hours, minutes, seconds);
+        bt->printf("Current Date: %02d/%02d/%04d (Day %d)\r\n", day, month, year, weekday);
     }
-    else if (bt->equal_case("led change"))
+    else if (bt->equal_case("settime"))
     {
-        led.turn();
-        bt->sendString("Command: LED changed\r\n");
-
-        // LED处理代码
+        // 期望格式: settime 12:34:56
+        if (strlen(bt->getBuffer()) > 8)
+        {
+            uint8_t h, m, s;
+            if (sscanf(bt->getBuffer() + 8, "%hhu:%hhu:%hhu", &h, &m, &s) == 3)
+            {
+                rtc.setTime(h, m, s);
+                bt->printf("Time set to %02d:%02d:%02d\r\n", h, m, s);
+            }
+            else
+            {
+                bt->sendString("Invalid time format! Use: settime HH:MM:SS\r\n");
+            }
+        }
     }
-    else if (bt->equal_case("show"))
+    else if (bt->equal_case("setalarm"))
     {
-        bt->sendString("Command: show\r\n");
-        oled.Clear();
-        oled.ShowString(0, 0, "Waiting...", Device::OLED::OLED_8X16);
-
-        // 显示缓冲区内容
-        char debug_str[32];
-        sprintf(debug_str, "Buf[%d]:%s", strlen(bluetooth.rxBuffer), bluetooth.rxBuffer);
-        oled.ShowString(0, 16, debug_str, Device::OLED::OLED_6X8);
-
-        oled.Update();
-
-        // LED处理代码
+        // 期望格式: setalarm 12:34:56
+        if (strlen(bt->getBuffer()) > 9)
+        {
+            uint8_t h, m, s;
+            if (sscanf(bt->getBuffer() + 9, "%hhu:%hhu:%hhu", &h, &m, &s) == 3)
+            {
+                rtc.setAlarm(h, m, s);
+                rtc.enableAlarm(true);
+                bt->printf("Alarm set to %02d:%02d:%02d\r\n", h, m, s);
+            }
+            else
+            {
+                bt->sendString("Invalid alarm format! Use: setalarm HH:MM:SS\r\n");
+            }
+        }
+    }
+    else if (bt->equal_case("alarmon"))
+    {
+        rtc.enableAlarm(true);
+        bt->sendString("Alarm enabled\r\n");
+    }
+    else if (bt->equal_case("alarmoff"))
+    {
+        rtc.enableAlarm(false);
+        bt->sendString("Alarm disabled\r\n");
     }
     else
     {
-        // 未知命令处理
-        bt->sendString("Unknown command\r\n");
+        // 处理其他命令...
+        // 原有代码保持不变
     }
 
-    // 重置标志并清空缓冲区，准备接 收下一条命令
+    // 清空接收缓冲区
     bt->clear();
     bt->hasNewData = false;
 }
 
-// 修改main循环，使用蓝牙类的缓冲区
 int main(void)
 {
-    // // 系统初始化
-    // SystemInit();
-
-    // 外设初始化
-
+    // 初始化外设
     oled.Init();
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
+    // bluetooth callback初始化为{nullptr,this}
+    // bluetooth.callback.arg = &bluetooth;
 
-    size_t i = 0;
-    System::power::setEXTIWakeup(Port::A,Pin::Pin1);
-    // 主循环 - 正式代码
+    // 初始化RTC - 使用外部32.768kHz晶振
+    bool isFirstConfig = rtc.init(System::rtc_clock::LSE);
+
+    // 首次配置时设置日期和时间
+    if (isFirstConfig)
+    {
+        // 设置当前时间 (12:00:00)
+        rtc.setTime(12, 0, 0);
+
+        // 设置当前日期 (2025年3月27日, 星期四)
+        rtc.setDate(27, 3, 2025, 4);
+
+        // 设置一个闹钟示例
+        rtc.setAlarm(12, 1, 0); // 设置为1分钟后
+    }
+
+    // 注册秒中断回调
+    rtc.setSecondCallback(onSecondTick, nullptr);
+    rtc.enableSecondInterrupt(true);
+
+    // 注册闹钟中断回调
+    rtc.setAlarmCallback(onAlarm, nullptr);
+    rtc.enableAlarm(true);
+
+    // 显示初始时间
+    System::rtc_clock::DateTime now = rtc.getDateTime();
+    sprintf(timeStr, "%02d:%02d:%02d", now.hours, now.minutes, now.seconds);
+
+    oled.Clear();
+    oled.ShowString(0, 0, "RTC Clock", Device::OLED::OLED_8X16);
+    oled.ShowString(0, 16, timeStr, Device::OLED::OLED_8X16);
+
+    char dateStr[20];
+    sprintf(dateStr, "%02d/%02d/%04d", now.day, now.month, now.year);
+    oled.ShowString(0, 32, dateStr, Device::OLED::OLED_8X16);
+
+    // 显示闹钟时间
+    uint8_t alarmH, alarmM, alarmS;
+    rtc.getAlarm(alarmH, alarmM, alarmS);
+    sprintf(timeStr, "Alarm: %02d:%02d:%02d", alarmH, alarmM, alarmS);
+    oled.ShowString(0, 48, timeStr, Device::OLED::OLED_6X8);
+
+    oled.Update();
+
+    // 通过蓝牙发送初始化信息
+    bluetooth.printf("RTC initialized. Current time: %02d:%02d:%02d\r\n",
+                     now.hours, now.minutes, now.seconds);
+    bluetooth.printf("Date: %02d/%02d/%04d\r\n", now.day, now.month, now.year);
+    bluetooth.sendString("Available commands:\r\n");
+    bluetooth.sendString("  time - show current time\r\n");
+    bluetooth.sendString("  settime HH:MM:SS - set current time\r\n");
+    bluetooth.sendString("  setalarm HH:MM:SS - set alarm time\r\n");
+    bluetooth.sendString("  alarmon - enable alarm\r\n");
+    bluetooth.sendString("  alarmoff - disable alarm\r\n");
+
+    // 主循环
     while (1)
     {
-        System::delay(1_s);
-        led.turn();
-        bluetooth.sendString("test");
-        // 显示即将进入STOP模式
-        oled.Clear();
-        oled.ShowString(0, 0, "Entering STOP", Device::OLED::OLED_8X16);
-        oled.ShowString(0, 16, "Press PA1->Wake", Device::OLED::OLED_6X8);
-        oled.Update();
-        bluetooth.printf("Entering STOP mode, loop:%d\r\n", i);
+        // 只在需要时更新显示，避免频繁刷新OLED
+        if (updateDisplay)
+        {
+            oled.Clear();
+            oled.ShowString(0, 0, "RTC Clock", Device::OLED::OLED_8X16);
+            oled.ShowString(0, 16, timeStr, Device::OLED::OLED_8X16);
 
-        // 延时确保消息发送完成
-        System::delay(500_ms);
+            // 获取当前日期
+            System::rtc_clock::DateTime dt = rtc.getDateTime();
+            sprintf(dateStr, "%02d/%02d/%04d", dt.day, dt.month, dt.year);
+            oled.ShowString(0, 32, dateStr, Device::OLED::OLED_8X16);
 
-        // 进入STOP模式，明确指定下降沿触发
-        System::power::stop();
-        // 下面的代码只有在唤醒后才会执行
-        i++; // 增加计数
+            // 更新闹钟时间显示
+            uint8_t alarmH, alarmM, alarmS;
+            rtc.getAlarm(alarmH, alarmM, alarmS);
+            sprintf(timeStr, "Alarm: %02d:%02d:%02d", alarmH, alarmM, alarmS);
+            oled.ShowString(0, 48, timeStr, Device::OLED::OLED_6X8);
 
-        // 唤醒后重新初始化系统
-        SystemInit();         // 重新配置系统时钟
-        System::delay(10_ms); // 给系统时钟一些稳定时间
+            oled.Update();
+            updateDisplay = false;
+        }
 
-        // 重新初始化外设
-        oled.Init();
-        bluetooth.init();
+        // 添加低功耗操作...
+        // 例如在未处理事件时进入休眠模式
+        if (!updateDisplay && !bluetooth.hasNewData)
+        {
+            // 进入睡眠模式，可被RTC闹钟或其他中断唤醒
+            System::power::sleep_for_interrupt();
+        }
 
-        // 显示唤醒成功信息
-        oled.Clear();
-        oled.ShowString(0, 0, "Wakeup Success!", Device::OLED::OLED_8X16);
-
-        char loopStr[32];
-        sprintf(loopStr, "Loop: %u", i);
-        oled.ShowString(0, 16, loopStr, Device::OLED::OLED_6X8);
-        oled.Update();
-
-        bluetooth.printf("Wakeup Success! loop:%d\r\n", i);
-
-        // 显示一段时间后再次进入循环
-        System::delay(200_ms);
+        // 处理蓝牙接收
+        if (bluetooth.hasNewData)
+        {
+            bluetooth.callback();
+        }
     }
 }

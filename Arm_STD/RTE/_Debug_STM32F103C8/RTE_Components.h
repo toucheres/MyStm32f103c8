@@ -17,6 +17,8 @@
 
 /* Keil::Device:StdPeriph Drivers:ADC@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_ADC
+/* Keil::Device:StdPeriph Drivers:BKP@3.6.0 */
+#define RTE_DEVICE_STDPERIPH_BKP
 /* Keil::Device:StdPeriph Drivers:EXTI@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_EXTI
 /* Keil::Device:StdPeriph Drivers:Framework@3.6.0 */
@@ -29,6 +31,8 @@
 #define RTE_DEVICE_STDPERIPH_PWR
 /* Keil::Device:StdPeriph Drivers:RCC@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_RCC
+/* Keil::Device:StdPeriph Drivers:RTC@3.6.0 */
+#define RTE_DEVICE_STDPERIPH_RTC
 /* Keil::Device:StdPeriph Drivers:TIM@3.6.0 */
 #define RTE_DEVICE_STDPERIPH_TIM
 /* Keil::Device:StdPeriph Drivers:USART@3.6.0 */

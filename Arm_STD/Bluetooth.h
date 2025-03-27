@@ -18,7 +18,7 @@ namespace Device
 
     public:
         // void (*callback)(Bluetooth *self) = nullptr;
-        System::Interrupt::callback callback{nullptr, this};
+        System::Interrupt::RunAble callback{nullptr, this};
         // 构造函数
         Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate);
 

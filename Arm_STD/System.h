@@ -5,6 +5,7 @@
 #include "stm32f10x_exti.h"
 #include <cstdint>
 #include "MyStm32.h" // 包含time_us, time_ms, time_s等基本类型定义
+#include "Interrupt.h"
 
 namespace System
 {

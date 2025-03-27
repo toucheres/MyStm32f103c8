@@ -1,6 +1,6 @@
 #include "Interrupt.h"
 // 实现所有中断处理函数
-System::Interrupt::callback System::Interrupt::interrupts[NUM_Type] = {nullptr};
+System::Interrupt::RunAble System::Interrupt::interrupts[NUM_Type] = {nullptr};
 uint16_t System::Interrupt::formGPIOPIN2InterruptType(uint16_t GPIO_Pin)
 { // 查找引脚位置
     uint8_t pinPosition = 0;
@@ -35,7 +35,7 @@ uint16_t System::Interrupt::formGPIOPIN2InterruptType(uint16_t GPIO_Pin)
 }
 void System::Interrupt::registerHandler(uint16_t type, void (*fun)(void *),
                                         void *arg) {
-  System::Interrupt::interrupts[type] = callback(fun, arg);
+  System::Interrupt::interrupts[type] = RunAble(fun, arg);
 }
 extern "C"
 {

@@ -59,18 +59,18 @@ namespace System
         };
 
         // typedef void (*callback)(void *);
-        class callback {
+        class RunAble {
         public:
             void (*fun)(void *);
             void *arg;
 
 
-            callback()
+            RunAble()
             {
                 this->fun = nullptr;
                 this->arg = nullptr;
             }
-            callback(void (*fun)(void *), void *arg = nullptr)
+            RunAble(void (*fun)(void *), void *arg = nullptr)
             {
                 this->fun = fun;
                 this->arg = arg;
@@ -82,7 +82,7 @@ namespace System
                     this->fun(this->arg);
             }
         };
-        static callback interrupts[NUM_Type];
+        static RunAble interrupts[NUM_Type];
         static uint16_t formGPIOPIN2InterruptType(uint16_t GPIO_Pin);
         // 1
         static void registerHandler(uint16_t type, void (*fun)(void *), void *arg = nullptr);

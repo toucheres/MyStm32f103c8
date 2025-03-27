@@ -22,7 +22,8 @@
         "stdio.h": "c",
         "oled_data.h": "c",
         "cstdint": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "xtree": "cpp"
     },
     "C_Cpp.default.compilerPath": "c:/Users/asus/.vcpkg/artifacts/2139c4c6/compilers.arm.armclang/6.23.0/bin/armclang.exe",
     "C_Cpp.errorSquiggles": "disabled"

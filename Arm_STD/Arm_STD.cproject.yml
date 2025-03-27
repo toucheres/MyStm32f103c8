@@ -15,6 +15,7 @@ project:
         - file: ./LED.cpp
         - file: ./System.cpp
         - file: ./Interrupt.cpp
+        - file: ./RTC.cpp
 
   components:
     - component: ARM::CMSIS:CORE
@@ -31,6 +32,8 @@ project:
     - component: Keil::Device:StdPeriph Drivers:PWR
     - component: Keil::Device:StdPeriph Drivers:IWDG
     - component: Keil::Device:StdPeriph Drivers:EXTI
+    - component: Keil::Device:StdPeriph Drivers:RTC
+    - component: Keil::Device:StdPeriph Drivers:BKP
 
   # List executable file formats to be generated.
   output:
