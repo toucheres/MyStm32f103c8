@@ -64,7 +64,7 @@ void bt_fun(void *in)
     // 处理标准命令
     if (bt->equal_case("time"))
     {
-        // 获取当前时间
+        // 获取当前时间x
         uint8_t hours, minutes, seconds;
         rtc.getTime(hours, minutes, seconds);
 
@@ -124,8 +124,7 @@ void bt_fun(void *in)
     }
     else
     {
-        // 处理其他命令...
-        // 原有代码保持不变
+        bt->sendString("Unkown command\r\n");
     }
 
     // 清空接收缓冲区
@@ -139,46 +138,22 @@ int main(void)
     oled.Init();
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
-    // bluetooth callback初始化为{nullptr,this}
-    // bluetooth.callback.arg = &bluetooth;
-
-    // 初始化RTC - 使用外部32.768kHz晶振
-    if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
-    {
-        oled.Clear();
-        oled.ShowString(0, 0, "TRY SEC FLAG ON", Device::OLED::OLED_8X16);
-        oled.Update();
-        System::delay(1000_ms);
-    }
     bool isFirstConfig = rtc.init(System::rtc_clock::LSE);
-    if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
-    {
-        oled.Clear();
-        oled.ShowString(0, 0, "SEC FLAG ON", Device::OLED::OLED_8X16);
-        oled.Update();
-        System::delay(1000_ms);
-    }
-    // 首次配置时设置日期和时间
     if (isFirstConfig)
     {
         // 设置当前时间 (12:00:00)
         rtc.setTime(12, 0, 0);
-
         // 设置当前日期 (2025年3月27日, 星期四)
         rtc.setDate(27, 3, 2025, 4);
-
         // 设置一个闹钟示例
         rtc.setAlarm(12, 1, 0); // 设置为1分钟后
     }
-    System::delay(1_s);
     // 注册秒中断回调
     rtc.setSecondCallback(onSecondTick, nullptr);
     rtc.enableSecondInterrupt(true);
-
     // 注册闹钟中断回调
     rtc.setAlarmCallback(onAlarm, nullptr);
     rtc.enableAlarm(true);
-
     // 显示初始时间
     System::rtc_clock::DateTime now = rtc.getDateTime();
     sprintf(timeStr, "%02d:%02d:%02d", now.hours, now.minutes, now.seconds);
@@ -239,8 +214,7 @@ int main(void)
         // 例如在未处理事件时进入休眠模式
         if (!updateDisplay && !bluetooth.hasNewData)
         {
-            // 进入睡眠模式，可被RTC闹钟或其他中断唤醒
-            // System::power::sleep_for_interrupt();
+            System::power::sleep_for_interrupt();
         }
 
         // 处理蓝牙接收

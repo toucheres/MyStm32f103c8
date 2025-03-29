@@ -365,7 +365,6 @@ extern "C"
         {
             System::Interrupt::interrupts[System::Interrupt::RTC_IRQHand]();
         }
-        RTC_ClearITPendingBit(RTC_IT_SEC);
     }
 
     void FLASH_IRQHandler(void)
