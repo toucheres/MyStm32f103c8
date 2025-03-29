@@ -13,6 +13,7 @@ namespace System
     void delay(time_us);
     void delay(time_s);
     uint32_t millisecond();
+    uint32_t getTick(); // 添加getTick函数声明
     class WatchDog
     {
     public:

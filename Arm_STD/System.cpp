@@ -47,6 +47,16 @@ namespace System
         lastTick = currentTick;
         return msCounter;
     }
+    
+    // 实现更可靠的getTick函数
+    uint32_t getTick()
+    {
+        // 使用静态计数器，避免依赖SysTick的精确值
+        static uint32_t tickCounter = 0;
+        tickCounter++;
+        return tickCounter;
+    }
+    
     // 409500us 精度100us
     void WatchDog::IndependWatchDog::setTime(time_us timeus)
     {

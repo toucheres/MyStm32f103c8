@@ -34,8 +34,9 @@ uint16_t System::Interrupt::formGPIOPIN2InterruptType(uint16_t GPIO_Pin)
     return 0xFFFF;
 }
 void System::Interrupt::registerHandler(uint16_t type, void (*fun)(void *),
-                                        void *arg) {
-  System::Interrupt::interrupts[type] = RunAble(fun, arg);
+                                        void *arg)
+{
+    System::Interrupt::interrupts[type] = RunAble(fun, arg);
 }
 extern "C"
 {

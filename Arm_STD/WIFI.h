@@ -127,6 +127,9 @@ namespace Device
         
         // 发送原始数据
         void sendRaw(const char* data, uint16_t len);
+        
+        // 在缓冲区中查找指定字符串
+        bool findInBuffer(const char* str);
     };
 } // namespace Device
 

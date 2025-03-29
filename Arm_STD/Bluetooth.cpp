@@ -420,4 +420,83 @@ namespace Device
         // 发送格式化后的字符串
         sendString(buffer);
     }
+
+    // 检查接收缓冲区是否以指定前缀开头（区分大小写）
+    bool Bluetooth::startsWith(const char* prefix) const
+    {
+        size_t prefixLen = strlen(prefix);
+        if (prefixLen > rxIndex)
+            return false;
+            
+        return (strncmp(rxBuffer, prefix, prefixLen) == 0);
+    }
+
+    // 检查接收缓冲区是否以指定前缀开头（不区分大小写）
+    bool Bluetooth::startsWith_case(const char* prefix) const
+    {
+        size_t prefixLen = strlen(prefix);
+        if (prefixLen > rxIndex)
+            return false;
+            
+        for (size_t i = 0; i < prefixLen; i++)
+        {
+            char c1 = rxBuffer[i];
+            char c2 = prefix[i];
+            
+            // 转为小写比较
+            if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
+            if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
+            
+            if (c1 != c2)
+                return false;
+        }
+        
+        return true;
+    }
+
+    // 从缓冲区解析格式化输入（类似于sscanf）
+    int Bluetooth::scanArgs(const char* format, ...)
+    {
+        va_list args;
+        va_start(args, format);
+        int result = vsscanf(rxBuffer, format, args);
+        va_end(args);
+        return result;
+    }
+
+    // 获取去除前缀后的参数部分（用于复杂命令解析）
+    char* Bluetooth::getArgs(const char* prefix)
+    {
+        size_t prefixLen = strlen(prefix);
+        if (!startsWith_case(prefix) || rxIndex <= prefixLen)
+            return nullptr;
+        
+        // 跳过前缀和一个可能的空格
+        size_t offset = prefixLen;
+        if (rxBuffer[offset] == ' ')
+            offset++;
+            
+        return &rxBuffer[offset];
+    }
+
+    // 新增方法：从命令名后解析参数
+    int Bluetooth::scanCommandArgs(const char* cmdName, const char* format, ...)
+    {
+        // 检查命令前缀是否匹配
+        if (!startsWith_case(cmdName))
+            return 0;
+        
+        // 创建完整格式字符串（命令名 + 格式）
+        char fullFormat[128];
+        snprintf(fullFormat, sizeof(fullFormat), "%s %s", cmdName, format);
+        
+        // 解析参数
+        va_list args;
+        va_start(args, format);
+        int result = vsscanf(rxBuffer, fullFormat, args);
+        va_end(args);
+        
+        // 返回实际解析的参数数量（减去命令名）
+        return result > 0 ? result - 1 : 0;
+    }
 } // namespace Device

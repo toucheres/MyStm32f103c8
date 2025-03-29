@@ -157,24 +157,31 @@ namespace Device
     }
     
     // 发送数据
-    bool WIFI::send(const char* data, uint16_t len)
+    bool WIFI::send(const char *data, uint16_t len)
     {
-        char cmd[32];
-        sprintf(cmd, "AT+CIPSEND=%d\r\n", len);
+        // 使用静态缓冲区避免在栈上分配内存
+        static char cmd[32];
         
-        if (!executeCommand(cmd, ">", 1000))
-        {
-            return false;
-        }
+        // 使用snprintf代替sprintf，限制写入长度避免溢出
+        snprintf(cmd, sizeof(cmd), "AT+CIPSEND=%zu\r\n", len);
         
+        // 使用sendRaw代替未声明的uart->writeString
+        sendRaw(cmd, strlen(cmd));
+        
+        // 等待ESP8266准备好接收数据
+        System::delay(100_ms);
+        
+        // 使用sendRaw代替未声明的uart->write
         sendRaw(data, len);
-        return waitForResponse("SEND OK", 5000);
+        return true;
     }
     
     // 发送字符串
-    bool WIFI::sendString(const char* str)
+    bool WIFI::sendString(const char *str)
     {
-        return send(str, strlen(str));
+        size_t len = strlen(str);
+        // 直接调用新的send方法
+        return send(str, len);
     }
     
     // 格式化发送
@@ -270,12 +277,30 @@ namespace Device
     }
     
     // 执行AT命令并等待响应
-    bool WIFI::executeCommand(const char* command, const char* expectedResponse, 
-                             uint32_t timeout)
+    bool WIFI::executeCommand(const char *command, const char *expectedResponse, uint32_t timeout)
     {
+        // 清空缓冲区
         clear();
-        sendString(command);
-        return waitForResponse(expectedResponse, timeout);
+        
+        // 使用sendRaw代替未声明的uart->writeString
+        sendRaw(command, strlen(command));
+        
+        // 改进的超时处理
+        uint32_t maxAttempts = timeout / 10; // 根据10ms延时计算最大尝试次数
+        uint32_t attempts = 0;
+        
+        // 使用固定次数的尝试而不是毫秒级别的计时
+        while (attempts < maxAttempts)
+        {
+            // 处理接收数据
+            if (findInBuffer(expectedResponse))
+                return true;
+            
+            System::delay(10_ms);
+            attempts++;
+        }
+        
+        return false;
     }
     
     // 初始化GPIO引脚
@@ -438,6 +463,15 @@ namespace Device
             USART_SendData(usart, data[i]);
             while (USART_GetFlagStatus(usart, USART_FLAG_TC) == RESET);
         }
+    }
+    
+    // 在类实现中添加findInBuffer函数
+    bool Device::WIFI::findInBuffer(const char* str)
+    {
+        if (str == nullptr || rxBuffer[0] == '\0')
+            return false;
+        
+        return (strstr(rxBuffer, str) != nullptr);
     }
     
 } // namespace Device

@@ -69,6 +69,19 @@ namespace Device
 
         // 添加格式化输出方法
         void printf(const char *fmt, ...);
+
+        // 添加前缀匹配方法
+        bool startsWith(const char* prefix) const;
+        bool startsWith_case(const char* prefix) const;
+        
+        // 从缓冲区解析格式化输入
+        int scanArgs(const char* format, ...);
+        
+        // 获取去除前缀后的参数部分
+        char* getArgs(const char* prefix);
+
+        // 从命令名后解析参数
+        int scanCommandArgs(const char* cmdName, const char* format, ...);
     };
 } // namespace Device
 
