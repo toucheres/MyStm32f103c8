@@ -524,7 +524,7 @@ namespace Device
     {
         return executeCommand("AT+CIPCLOSE\r\n", "OK", 1000);
     }
-    
+
     // 执行AT命令并等待响应
     bool WIFI::executeCommand(const char* command, const char* expectedResponse, uint32_t timeout)
     {

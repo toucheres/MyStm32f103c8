@@ -20,10 +20,7 @@ Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
 Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
-System::rtc_clock rtc;             // 创建RTC实例
 
-char timeStr[20];           // 用于格式化时间字符串
-bool updateDisplay = false; // 时间更新标志
 bool wifiConnected = false; // WiFi连接状态
 
 // WiFi回调函数
@@ -31,260 +28,68 @@ void wifi_callback(void *in)
 {
     Device::WIFI *wf = (Device::WIFI *)(in);
 
-    // 在此处理WiFi接收到的数据
-    // 示例：检测到特定数据时更新显示
+    // 1. 打印接收到的数据
     bluetooth.printf("wifiget:%s\n", wf->getBuffer());
 
-    // 清空接收缓冲区
-    wf->clear();
+    // 2. 只在收到完整响应时清空缓冲区
+    if (strstr(wf->getBuffer(), "\r\nOK\r\n") ||
+        strstr(wf->getBuffer(), "\r\nERROR\r\n") ||
+        strstr(wf->getBuffer(), "SEND OK\r\n"))
+    {
+        // 处理完整响应后才清空
+        // wf->clear();  // 注意：在主循环中清空可能更合适
+    }
 }
 
-// 秒中断回调 - 每秒执行一次
-void onSecondTick(void *)
-{
-    // 获取当前时间
-    uint8_t hours, minutes, seconds;
-    rtc.getTime(hours, minutes, seconds);
 
-    // 格式化时间字符串
-    sprintf(timeStr, "%02d:%02d:%02d", hours, minutes, seconds);
-
-    // 翻转LED状态，实现1Hz闪烁
-    led.turn();
-
-    // 设置显示更新标志
-    updateDisplay = true;
-}
-
-// 闹钟中断回调
-void onAlarm(void *)
-{
-    // 显示闹钟触发消息
-    oled.Clear();
-    oled.ShowString(0, 0, "ALARM!", Device::OLED::OLED_8X16);
-    oled.ShowString(0, 16, "Wake up time!", Device::OLED::OLED_8X16);
-    oled.Update();
-
-    // 通过蓝牙发送闹钟消息
-    bluetooth.sendString("ALARM TRIGGERED!\r\n");
-
-    // 清除闹钟标志
-    rtc.clearAlarmFlag();
-}
 
 // 处理蓝牙命令
 void bt_fun(void *in)
 {
-    Device::Bluetooth *bt = (Device::Bluetooth *)(in);
-
-    // 处理RTC相关命令
-    if (bt->equal_case("time"))
-    {
-        // 获取当前时间x
-        uint8_t hours, minutes, seconds;
-        rtc.getTime(hours, minutes, seconds);
-
-        // 获取当前日期
-        uint8_t day, month, weekday;
-        uint16_t year;
-        rtc.getDate(day, month, year, weekday);
-
-        // 发送时间日期信息
-        bt->printf("Current Time: %02d:%02d:%02d\r\n", hours, minutes, seconds);
-        bt->printf("Current Date: %02d/%02d/%04d (Day %d)\r\n", day, month, year, weekday);
-    }
-    else if (bt->startsWith_case("settime"))
-    {
-        // 使用scanCommandArgs解析时间参数
-        uint8_t h, m, s;
-        if (bt->scanCommandArgs("settime", "%hhu:%hhu:%hhu", &h, &m, &s) == 3)
-        {
-            rtc.setTime(h, m, s);
-            bt->printf("Time set to %02d:%02d:%02d\r\n", h, m, s);
-        }
-        else
-        {
-            bt->sendString("Invalid time format! Use: settime HH:MM:SS\r\n");
-        }
-    }
-    else if (bt->startsWith_case("setalarm"))
-    {
-        // 使用scanCommandArgs解析闹钟参数
-        uint8_t h, m, s;
-        if (bt->scanCommandArgs("setalarm", "%hhu:%hhu:%hhu", &h, &m, &s) == 3)
-        {
-            rtc.setAlarm(h, m, s);
-            rtc.enableAlarm(true);
-            bt->printf("Alarm set to %02d:%02d:%02d\r\n", h, m, s);
-        }
-        else
-        {
-            bt->sendString("Invalid alarm format! Use: setalarm HH:MM:SS\r\n");
-        }
-    }
-    else if (bt->equal_case("alarmon"))
-    {
-        rtc.enableAlarm(true);
-        bt->sendString("Alarm enabled\r\n");
-    }
-    else if (bt->equal_case("alarmoff"))
-    {
-        rtc.enableAlarm(false);
-        bt->sendString("Alarm disabled\r\n");
-    }
-    // 添加WiFi相关命令
-    else if (bt->startsWith_case("wificonnect"))
-    {
-        // 使用scanCommandArgs解析WiFi参数
-        char ssid[32] = {0};
-        char password[32] = {0};
-
-        if (bt->scanCommandArgs("wificonnect", "%31s %31s", ssid, password) == 2)
-        {
-            bt->printf("Connecting to %s...\r\n", ssid);
-            oled.ShowString(0, 48, "Connecting WiFi...", Device::OLED::OLED_6X8);
-            oled.Update();
-
-            if (wifi.connect(ssid, password, 20000)) // 20秒超时
-            {
-                bt->printf("Connected to WiFi! SSID: %s\r\n", ssid);
-                oled.ShowString(0, 48, "WiFi Connected!", Device::OLED::OLED_6X8);
-                oled.Update();
-                wifiConnected = true;
-            }
-            else
-            {
-                bt->sendString("Failed to connect to WiFi!\r\n");
-                oled.ShowString(0, 48, "WiFi Failed!", Device::OLED::OLED_6X8);
-                oled.Update();
-            }
-        }
-        else
-        {
-            bt->sendString("Invalid format! Use: wificonnect SSID PASSWORD\r\n");
-        }
-    }
-    else if (bt->equal_case("wifistatus"))
-    {
-        Device::WIFI::Status status = wifi.getStatus();
-        switch (status)
-        {
-        case Device::WIFI::Status::DISCONNECTED:
-            bt->sendString("WiFi Status: DISCONNECTED\r\n");
-            break;
-        case Device::WIFI::Status::CONNECTED:
-            bt->sendString("WiFi Status: CONNECTED\r\n");
-            break;
-        case Device::WIFI::Status::GOT_IP:
-            bt->sendString("WiFi Status: CONNECTED (IP obtained)\r\n");
-            break;
-        case Device::WIFI::Status::ERROR:
-            bt->sendString("WiFi Status: ERROR\r\n");
-            break;
-        }
-    }
-    else if (bt->equal_case("wifiip"))
-    {
-        char ipAddress[16] = {0};
-        if (wifi.getIP(ipAddress, sizeof(ipAddress)))
-        {
-            bt->printf("IP Address: %s\r\n", ipAddress);
-        }
-        else
-        {
-            bt->sendString("Failed to get IP address\r\n");
-        }
-    }
-    else if (bt->equal_case("wifidisconnect"))
-    {
-        if (wifi.disconnect())
-        {
-            bt->sendString("WiFi disconnected\r\n");
-            wifiConnected = false;
-            oled.ShowString(0, 48, "WiFi Disconnected", Device::OLED::OLED_6X8);
-            oled.Update();
-        }
-        else
-        {
-            bt->sendString("Failed to disconnect WiFi\r\n");
-        }
-    }
-    else if (bt->equal_case("wifitest_tcp"))
-    {
-        // 尝试连接TCP服务器进行测试
-        bt->sendString("Testing TCP connection...\r\n");
-        if (wifi.connectTCP("example.com", 80))
-        {
-            bt->sendString("TCP connected! Sending test request...\r\n");
-
-            // 发送简单的HTTP GET请求
-            wifi.sendString("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
-
-            // 等待响应（实际应用中应使用回调方式）
-            System::delay(2000_ms);
-
-            // 显示接收到的数据头部
-            bt->sendString("Response received:\r\n");
-            bt->sendString(wifi.getBuffer());
-
-            // 关闭连接
-            wifi.closeTCP();
-        }
-        else
-        {
-            bt->sendString("Failed to connect TCP server\r\n");
-        }
-    }
-    // 添加WiFi AT命令测试（改为前缀匹配）
-    else if (bt->startsWith_case("wifiat"))
-    {
-        // 创建静态缓冲区，确保内存安全
-        static char atCommand[128] = "AT";
-
-        // 获取AT命令参数部分
-        char *args = bt->getArgs("wifiat");
-        if (args == nullptr || strlen(args) == 0)
-        {
-            // 如果没有附加命令，使用默认AT命令
-            strcpy(atCommand, "AT\r\n");
-        }
-        else
-        {
-            // 为命令添加回车换行
-            snprintf(atCommand, sizeof(atCommand), "%s\r\n", args);
-        }
-
-        bt->printf("Sending AT command: %s", atCommand);
-
-        // 清空WiFi接收缓冲区
-        wifi.clear();
-
-        // 发送AT命令到ESP8266
-        wifi.sendString(atCommand);
-
-        // 等待响应
-        System::delay(500_ms);
-
-        // 获取并显示响应
-        bt->printf("Response: %s\r\n", wifi.getBuffer());
-
-        // 在OLED上显示状态
-        oled.ShowString(0, 48, "AT Test Done", Device::OLED::OLED_6X8);
-        oled.Update();
-    }
-    // WiFi硬件连接测试
-    else if (bt->equal_case("wifitest"))
+    Device::Bluetooth*bt = static_cast<Device::Bluetooth*>(in);
+    if (bt->equal_case("wifitest"))
     {
         bt->sendString("Testing WiFi hardware connection...\r\n");
-        // 1. 基本AT测试
-        // wifi.clear();
-        wifi.sendString("AT\r\n");
-    }
-    else
-    {
-        bt->sendString("Unknown command\r\n");
-    }
 
+        // 1. 清空WiFi接收缓冲区
+        wifi.clear();
+
+        // 2. 发送AT测试命令
+        wifi.sendString("AT\r\n");
+
+        // 3. 等待响应（设置合理的超时时间）
+        uint32_t startTime = System::millisecond();
+        bool responseReceived = false;
+        bool okFound = false;
+        System::delay(2_s);
+        // 检查是否收到OK响应
+        if (strstr(wifi.getBuffer(), "\r\nOK\r\n"))
+        {
+            bt->sendString("WiFi module responded with OK! Hardware connection successful.\r\n");
+            okFound = true;
+            responseReceived = true;
+        }
+        // 检查是否收到ERROR响应
+        else if (strstr(wifi.getBuffer(), "\r\nERROR\r\n"))
+        {
+            bt->sendString("WiFi module responded with ERROR!\r\n");
+            responseReceived = true;
+        }
+
+        // 4. 超时和结果报告
+        if (!responseReceived)
+        {
+            bt->printf("No proper response within timeout.\r\n");
+            bt->printf("Received buffer: %s\r\n", wifi.getBuffer());
+        }
+
+        // 5. 更新OLED显示
+        oled.ShowString(0, 48, okFound ? "WiFi OK" : "WiFi Failed", Device::OLED::OLED_6X8);
+        oled.Update();
+
+        // 6. 清空缓冲区为下次命令做准备
+        wifi.clear();
+    }
     // 清空接收缓冲区
     bt->clear();
     bt->hasNewData = false;
@@ -302,49 +107,17 @@ int main(void)
     if (wifi.init())
     {
         oled.ShowString(0, 48, "WiFi Ready", Device::OLED::OLED_6X8);
+        bluetooth.printf("WiFi Ready\n");
         wifi.callback.fun = wifi_callback;
         wifi.callback.arg = &wifi;
     }
     else
     {
         oled.ShowString(0, 48, "WiFi Init Failed", Device::OLED::OLED_6X8);
+        bluetooth.printf("WiFi Init Failed\n");
+
         bluetooth.sendString("WIFI init failed!\r\n");
     }
-
-    // 初始化RTC
-    bool isFirstConfig = rtc.init(System::rtc_clock::LSE);
-    if (isFirstConfig)
-    {
-        // 设置当前时间 (12:00:00)
-        rtc.setTime(12, 0, 0);
-        // 设置当前日期 (2025年3月27日, 星期四)
-        rtc.setDate(27, 3, 2025, 4);
-        // 设置一个闹钟示例
-        rtc.setAlarm(12, 1, 0); // 设置为1分钟后
-    }
-    // 注册秒中断回调
-    rtc.setSecondCallback(onSecondTick, nullptr);
-    rtc.enableSecondInterrupt(true);
-    // 注册闹钟中断回调
-    rtc.setAlarmCallback(onAlarm, nullptr);
-    rtc.enableAlarm(true);
-    // 显示初始时间
-    System::rtc_clock::DateTime now = rtc.getDateTime();
-    sprintf(timeStr, "%02d:%02d:%02d", now.hours, now.minutes, now.seconds);
-
-    oled.Clear();
-    oled.ShowString(0, 0, "RTC & WiFi Demo", Device::OLED::OLED_8X16);
-    oled.ShowString(0, 16, timeStr, Device::OLED::OLED_8X16);
-
-    char dateStr[20];
-    sprintf(dateStr, "%02d/%02d/%04d", now.day, now.month, now.year);
-    oled.ShowString(0, 32, dateStr, Device::OLED::OLED_8X16);
-    oled.Update();
-
-    // 通过蓝牙发送初始化信息
-    bluetooth.printf("RTC & WiFi Demo. Current time: %02d:%02d:%02d\r\n",
-                     now.hours, now.minutes, now.seconds);
-    bluetooth.printf("Date: %02d/%02d/%04d\r\n", now.day, now.month, now.year);
     bluetooth.sendString("Available commands:\r\n");
     bluetooth.sendString("  RTC Commands:\r\n");
     bluetooth.sendString("    time - show current time\r\n");
@@ -364,38 +137,6 @@ int main(void)
     // 主循环
     while (1)
     {
-        // 更新RTC显示
-        if (updateDisplay)
-        {
-            oled.Clear();
-            oled.ShowString(0, 0, "RTC & WiFi Demo", Device::OLED::OLED_8X16);
-            oled.ShowString(0, 16, timeStr, Device::OLED::OLED_8X16);
-
-            // 获取当前日期
-            System::rtc_clock::DateTime dt = rtc.getDateTime();
-            sprintf(dateStr, "%02d/%02d/%04d", dt.day, dt.month, dt.year);
-            oled.ShowString(0, 32, dateStr, Device::OLED::OLED_8X16);
-
-            // 显示WiFi状态
-            if (wifiConnected)
-            {
-                char ipAddress[16] = {0};
-                if (wifi.getIP(ipAddress, sizeof(ipAddress)))
-                {
-                    char ipStr[30];
-                    sprintf(ipStr, "IP: %s", ipAddress);
-                    oled.ShowString(0, 48, ipStr, Device::OLED::OLED_6X8);
-                }
-                else
-                {
-                    oled.ShowString(0, 48, "WiFi Connected", Device::OLED::OLED_6X8);
-                }
-            }
-
-            oled.Update();
-            updateDisplay = false;
-        }
-
         // 处理蓝牙接收
         if (bluetooth.hasNewData)
         {
@@ -407,12 +148,6 @@ int main(void)
         {
             wifi.callback();
             wifi.hasNewData = false; // 确保数据被处理后重置标志
-        }
-
-        // 低功耗操作
-        if (!updateDisplay && !bluetooth.hasNewData && !wifi.hasNewData)
-        {
-            System::power::sleep_for_interrupt();
         }
     }
 }

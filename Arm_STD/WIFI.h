@@ -99,10 +99,11 @@ namespace Device
         bool connectTCP(const char* host, uint16_t port, uint32_t timeout = 5000);
         bool closeTCP();
         
-    private:
+
         // 执行AT命令并等待响应
         bool executeCommand(const char* command, const char* expectedResponse, uint32_t timeout);
-        
+
+    private:
         // 在缓冲区中查找指定字符串
         bool findInBuffer(const char* str);
     };
