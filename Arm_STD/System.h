@@ -12,7 +12,7 @@ namespace System
     void delay(time_ms);
     void delay(time_us);
     void delay(time_s);
-
+    uint32_t millisecond();
     class WatchDog
     {
     public:

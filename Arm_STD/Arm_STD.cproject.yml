@@ -16,6 +16,7 @@ project:
         - file: ./System.cpp
         - file: ./Interrupt.cpp
         - file: ./RTC.cpp
+        - file: ./WIFI.cpp
 
   components:
     - component: ARM::CMSIS:CORE

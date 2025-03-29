@@ -30,7 +30,23 @@ namespace System
             ;                       // 等待计数到0
         SysTick->CTRL = 0x00000004; // 关闭定时器
     }
+    // 使用SysTick获取系统运行的毫秒数
+    uint32_t millisecond()
+    {
+        static uint32_t msCounter = 0;
+        static uint32_t lastTick = 0;
+        uint32_t currentTick = SysTick->VAL;
 
+        // 检测SysTick是否溢出
+        if (currentTick > lastTick)
+        {
+            // 溢出发生，增加毫秒计数
+            msCounter++;
+        }
+
+        lastTick = currentTick;
+        return msCounter;
+    }
     // 409500us 精度100us
     void WatchDog::IndependWatchDog::setTime(time_us timeus)
     {
