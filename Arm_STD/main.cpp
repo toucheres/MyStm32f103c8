@@ -18,9 +18,9 @@
 
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
-Device::Bluetooth bluetooth{USART1, 9600};                                                      
+Device::Bluetooth bluetooth{USART1, 9600};
 Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
-System::rtc_clock rtc; // 创建RTC实例
+System::rtc_clock rtc;             // 创建RTC实例
 
 char timeStr[20];           // 用于格式化时间字符串
 bool updateDisplay = false; // 时间更新标志
@@ -30,24 +30,13 @@ bool wifiConnected = false; // WiFi连接状态
 void wifi_callback(void *in)
 {
     Device::WIFI *wf = (Device::WIFI *)(in);
-    
+
     // 在此处理WiFi接收到的数据
     // 示例：检测到特定数据时更新显示
-    if (strstr(wf->getBuffer(), "+IPD") != NULL)
-    {
-        // 收到网络数据
-        oled.ShowString(0, 48, "Data received!", Device::OLED::OLED_6X8);
-        oled.Update();
-        
-        // 转发到蓝牙
-        bluetooth.sendString("WiFi data: ");
-        bluetooth.sendString(wf->getBuffer());
-        bluetooth.sendString("\r\n");
-    }
-    
+    bluetooth.printf("wifiget:%s\n", wf->getBuffer());
+
     // 清空接收缓冲区
     wf->clear();
-    wf->hasNewData = false;
 }
 
 // 秒中断回调 - 每秒执行一次
@@ -149,13 +138,13 @@ void bt_fun(void *in)
         // 使用scanCommandArgs解析WiFi参数
         char ssid[32] = {0};
         char password[32] = {0};
-        
+
         if (bt->scanCommandArgs("wificonnect", "%31s %31s", ssid, password) == 2)
         {
             bt->printf("Connecting to %s...\r\n", ssid);
             oled.ShowString(0, 48, "Connecting WiFi...", Device::OLED::OLED_6X8);
             oled.Update();
-            
+
             if (wifi.connect(ssid, password, 20000)) // 20秒超时
             {
                 bt->printf("Connected to WiFi! SSID: %s\r\n", ssid);
@@ -180,18 +169,18 @@ void bt_fun(void *in)
         Device::WIFI::Status status = wifi.getStatus();
         switch (status)
         {
-            case Device::WIFI::Status::DISCONNECTED:
-                bt->sendString("WiFi Status: DISCONNECTED\r\n");
-                break;
-            case Device::WIFI::Status::CONNECTED:
-                bt->sendString("WiFi Status: CONNECTED\r\n");
-                break;
-            case Device::WIFI::Status::GOT_IP:
-                bt->sendString("WiFi Status: CONNECTED (IP obtained)\r\n");
-                break;
-            case Device::WIFI::Status::ERROR:
-                bt->sendString("WiFi Status: ERROR\r\n");
-                break;
+        case Device::WIFI::Status::DISCONNECTED:
+            bt->sendString("WiFi Status: DISCONNECTED\r\n");
+            break;
+        case Device::WIFI::Status::CONNECTED:
+            bt->sendString("WiFi Status: CONNECTED\r\n");
+            break;
+        case Device::WIFI::Status::GOT_IP:
+            bt->sendString("WiFi Status: CONNECTED (IP obtained)\r\n");
+            break;
+        case Device::WIFI::Status::ERROR:
+            bt->sendString("WiFi Status: ERROR\r\n");
+            break;
         }
     }
     else if (bt->equal_case("wifiip"))
@@ -227,17 +216,17 @@ void bt_fun(void *in)
         if (wifi.connectTCP("example.com", 80))
         {
             bt->sendString("TCP connected! Sending test request...\r\n");
-            
+
             // 发送简单的HTTP GET请求
             wifi.sendString("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
-            
+
             // 等待响应（实际应用中应使用回调方式）
             System::delay(2000_ms);
-            
+
             // 显示接收到的数据头部
             bt->sendString("Response received:\r\n");
             bt->sendString(wifi.getBuffer());
-            
+
             // 关闭连接
             wifi.closeTCP();
         }
@@ -251,10 +240,10 @@ void bt_fun(void *in)
     {
         // 创建静态缓冲区，确保内存安全
         static char atCommand[128] = "AT";
-        
+
         // 获取AT命令参数部分
-        char* args = bt->getArgs("wifiat");
-         if (args == nullptr || strlen(args) == 0)
+        char *args = bt->getArgs("wifiat");
+        if (args == nullptr || strlen(args) == 0)
         {
             // 如果没有附加命令，使用默认AT命令
             strcpy(atCommand, "AT\r\n");
@@ -266,19 +255,19 @@ void bt_fun(void *in)
         }
 
         bt->printf("Sending AT command: %s", atCommand);
-        
+
         // 清空WiFi接收缓冲区
         wifi.clear();
-        
+
         // 发送AT命令到ESP8266
         wifi.sendString(atCommand);
-        
+
         // 等待响应
         System::delay(500_ms);
-        
+
         // 获取并显示响应
         bt->printf("Response: %s\r\n", wifi.getBuffer());
-        
+
         // 在OLED上显示状态
         oled.ShowString(0, 48, "AT Test Done", Device::OLED::OLED_6X8);
         oled.Update();
@@ -287,51 +276,9 @@ void bt_fun(void *in)
     else if (bt->equal_case("wifitest"))
     {
         bt->sendString("Testing WiFi hardware connection...\r\n");
-        
         // 1. 基本AT测试
-        wifi.clear();
+        // wifi.clear();
         wifi.sendString("AT\r\n");
-        System::delay(200_ms);
-        if (strstr(wifi.getBuffer(), "OK"))
-        {
-            bt->sendString("Basic AT command: SUCCESS\r\n");
-        }
-        else
-        {
-            bt->sendString("Basic AT command: FAILED\r\n");
-            bt->printf("Response: %s\r\n", wifi.getBuffer());
-        }
-        
-        // 2. 版本信息
-        wifi.clear();
-        wifi.sendString("AT+GMR\r\n");
-        System::delay(500_ms);
-        if (strstr(wifi.getBuffer(), "version"))
-        {
-            bt->sendString("Version info: SUCCESS\r\n");
-            bt->printf("Version: %s\r\n", wifi.getBuffer());
-        }
-        else
-        {
-            bt->sendString("Version info: FAILED\r\n");
-        // 3. 检查WiFi模式
-        wifi.clear();
-        wifi.sendString("AT+CWMODE?\r\n");
-        System::delay(200_ms);
-        if (wifi.getBuffer()[0] != '\0')
-        {
-            bt->sendString("WiFi mode check: SUCCESS\r\n");
-            bt->printf("Mode: %s\r\n", wifi.getBuffer());
-        }
-        else
-        {
-            bt->sendString("WiFi mode check: FAILED\r\n");
-        }
-            bt->sendString("WiFi mode check: FAILED\r\n");
-        }
-        
-        oled.ShowString(0, 48, "HW Test Done", Device::OLED::OLED_6X8);
-        oled.Update();
     }
     else
     {
@@ -350,19 +297,20 @@ int main(void)
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
     bluetooth.callback.arg = &bluetooth;
-    
-    // 初始化WiFi模块
+
+    // 初始化WiFi模块并检查是否成功
     if (wifi.init())
     {
         oled.ShowString(0, 48, "WiFi Ready", Device::OLED::OLED_6X8);
-        wifi.setCallback(wifi_callback, &wifi);
+        wifi.callback.fun = wifi_callback;
+        wifi.callback.arg = &wifi;
     }
     else
     {
-      oled.ShowString(0, 48, "WiFi Init Failed", Device::OLED::OLED_6X8);
-      bluetooth.printf("WIFI init failed!\n");
+        oled.ShowString(0, 48, "WiFi Init Failed", Device::OLED::OLED_6X8);
+        bluetooth.sendString("WIFI init failed!\r\n");
     }
-    
+
     // 初始化RTC
     bool isFirstConfig = rtc.init(System::rtc_clock::LSE);
     if (isFirstConfig)
@@ -458,6 +406,7 @@ int main(void)
         if (wifi.hasNewData)
         {
             wifi.callback();
+            wifi.hasNewData = false; // 确保数据被处理后重置标志
         }
 
         // 低功耗操作
@@ -467,6 +416,6 @@ int main(void)
         }
     }
 }
-//debug   27000
-//release 19500
-//size    15000
+// debug   27000
+// release 19500
+// size    15000

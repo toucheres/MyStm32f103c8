@@ -1,30 +1,25 @@
 #ifndef _WIFI_H_
 #define _WIFI_H_
+
 #include "stm32f10x.h"
 #include <cstdint>
-#include "Interrupt.h"
-#include <cstdarg>
-#include <cstdio>
 #include <cstring>
+#include <cstdarg>
+#include "Interrupt.h"
 
 namespace Device
 {
     class WIFI
     {
+    private:
+        USART_TypeDef *USARTx;
+        uint32_t baudRate;
+        uint16_t rxIndex;
+        
+        // 帮助函数，处理接收到的字符
+        void processReceivedChar(uint8_t data);
+
     public:
-        // 命令执行超时时间(毫秒)
-        static constexpr uint32_t DEFAULT_TIMEOUT = 5000;
-        // 接收缓冲区大小
-        static constexpr uint16_t RX_BUFFER_SIZE = 1024;
-        
-        // WiFi模式枚举
-        enum class Mode
-        {
-            STATION,     // 客户端模式
-            AP,          // 接入点模式
-            BOTH         // 两种模式同时启用
-        };
-        
         // 连接状态枚举
         enum class Status
         {
@@ -34,103 +29,83 @@ namespace Device
             ERROR          // 错误状态
         };
         
-        // 构造函数(指定使用的USART接口和波特率)
-        WIFI(USART_TypeDef* usart = USART2, uint32_t baudRate = 115200);
+        Status status;     // 当前状态
         
-        // 初始化WiFi模块
+        System::Interrupt::RunAble callback{nullptr, this};
+        
+        // 构造函数
+        WIFI(USART_TypeDef *_usart, uint32_t _baudRate);
+        
+        // 初始化函数
         bool init();
         
-        // 设置WiFi模式(客户端/AP/两者)
-        bool setMode(Mode mode);
+        // 发送函数
+        void sendByte(uint8_t byte);
+        void sendData(uint8_t *data, uint16_t len);
+        void sendString(const char *str);
         
-        // 连接到WiFi网络
-        bool connect(const char* ssid, const char* password, uint32_t timeout = DEFAULT_TIMEOUT);
+        bool isDataAvailable();
         
-        // 断开WiFi连接
-        bool disconnect();
+        uint8_t receiveByte();
         
-        // 获取当前IP地址
-        bool getIP(char* ipBuffer, uint16_t bufferSize);
+        void receiveData(uint8_t *buffer, uint16_t len);
+        bool equal(const char *const in);
+        bool equal_case(const char *const in);
         
-        // 建立TCP连接
-        bool connectTCP(const char* host, uint16_t port, uint32_t timeout = DEFAULT_TIMEOUT);
+        // 获取最后接收的完整行数据
+        char *getLastData();
         
-        // 关闭TCP连接
-        bool closeTCP();
+        // 获取接收缓冲区内容
+        const char *getBuffer() const;
         
-        // 发送数据
-        bool send(const char* data, uint16_t len);
+        // 获取当前接收缓冲区长度
+        uint16_t getBufferLength() const;
         
-        // 发送字符串
-        bool sendString(const char* str);
+        // 获取当前缓冲区内数据的数量
+        uint16_t getNum() const;
         
-        // 格式化发送(类似printf)
-        bool printf(const char* format, ...);
-        
-        // 检查是否有数据可读
-        bool available();
-        
-        // 读取数据到缓冲区
-        uint16_t read(char* buffer, uint16_t len);
-        
-        // 清空接收缓冲区
+        // 清空缓冲区
         void clear();
         
-        // 设置接收回调函数
-        void setCallback(void (*function)(void*), void* arg = nullptr);
+        // 中断处理函数
+        void handleInterrupt();
+        void setInterrupt();
         
-        // 获取缓冲区数据
-        const char* getBuffer() const { return rxBuffer; }
+        // 接收缓冲区，增大到1024字节以适应WiFi通信
+        char rxBuffer[1024];
+        bool hasNewData;
         
-        // 比较接收到的数据(不区分大小写)
-        bool equal_case(const char* str);
+        // 添加格式化输出方法
+        void printf(const char *fmt, ...);
         
-        // 比较接收到的数据(区分大小写)
-        bool equal(const char* str);
+        // 添加前缀匹配方法
+        bool startsWith(const char* prefix) const;
+        bool startsWith_case(const char* prefix) const;
         
-        // 获取当前状态
+        // 从缓冲区解析格式化输入
+        int scanArgs(const char* format, ...);
+        
+        // 获取去除前缀后的参数部分
+        char* getArgs(const char* prefix);
+        
+        // 从命令名后解析参数
+        int scanCommandArgs(const char* cmdName, const char* format, ...);
+        
+        // WiFi特有功能
+        bool connect(const char* ssid, const char* password, uint32_t timeout = 10000);
+        bool disconnect();
+        bool getIP(char* ipBuffer, uint16_t bufferSize);
         Status getStatus() const { return status; }
-        
-        // 执行AT命令并等待响应
-        bool executeCommand(const char* command, const char* expectedResponse, 
-                           uint32_t timeout = DEFAULT_TIMEOUT);
-        
-        // 数据接收标志
-        volatile bool hasNewData;
-        
-        // 回调实例
-        System::Interrupt::RunAble callback;
+        bool connectTCP(const char* host, uint16_t port, uint32_t timeout = 5000);
+        bool closeTCP();
         
     private:
-        USART_TypeDef* usart;      // 使用的USART接口
-        uint32_t baudRate;         // 波特率
-        Status status;             // 当前状态
-        Mode mode;                 // 当前模式
-        
-        char rxBuffer[RX_BUFFER_SIZE]; // 接收缓冲区
-        volatile uint16_t rxIndex;     // 接收索引
-        
-        // 初始化GPIO引脚
-        void initGPIO();
-        
-        // 初始化USART
-        void initUSART();
-        
-        // 注册中断处理
-        void registerInterruptHandler();
-        
-        // USART中断处理函数
-        static void USARTInterruptHandler(void* arg);
-        
-        // 等待特定响应
-        bool waitForResponse(const char* expectedResponse, uint32_t timeout);
-        
-        // 发送原始数据
-        void sendRaw(const char* data, uint16_t len);
+        // 执行AT命令并等待响应
+        bool executeCommand(const char* command, const char* expectedResponse, uint32_t timeout);
         
         // 在缓冲区中查找指定字符串
         bool findInBuffer(const char* str);
     };
 } // namespace Device
 
-#endif //_WIFI_H_
+#endif // _WIFI_H_
