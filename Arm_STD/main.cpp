@@ -35,7 +35,7 @@ void bt_fun(void *in)
     Device::Bluetooth *bt = static_cast<Device::Bluetooth *>(in);
     if (bt->equal_case("test"))
     {
-        wifi.sendString("AT\r\n");
+        wifi.printf_late("AT\r\n");
     }
     if (bt->equal_case("clear"))
     {
@@ -43,7 +43,7 @@ void bt_fun(void *in)
     }
     if (bt->equal_case("show"))
     {
-        bluetooth.sendString(wifi.rxBuffer);
+        bluetooth.printf_late(wifi.rxBuffer);
     }
     // 清空接收缓冲区
     bt->clear();
