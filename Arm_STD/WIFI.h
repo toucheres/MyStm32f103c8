@@ -19,6 +19,11 @@ namespace Device
         // 帮助函数，处理接收到的字符
         void processReceivedChar(uint8_t data);
 
+        // 添加发送缓冲区和状态标志
+        char txBuffer[512];       // 延迟发送缓冲区
+        bool hasPendingTx;        // 是否有待发送数据
+        uint16_t txLength;        // 缓冲区中的数据长度
+
     public:
         // 连接状态枚举
         enum class Status
@@ -102,7 +107,18 @@ namespace Device
 
         // 执行AT命令并等待响应
         bool executeCommand(const char* command, const char* expectedResponse, uint32_t timeout);
-        bool executeCommand_(const char* command, const char* expectedResponse, uint32_t timeout);
+
+        // 延迟打印方法 - 安全地在中断中调用
+        void printf_late(const char *fmt, ...);
+        
+        // 先发送缓冲区内容，再发送当前字符串
+        void printf_before(const char *fmt, ...);
+        
+        // 发送待发送的内容(在主循环中调用)
+        bool sendPending();
+        
+        // 获取是否有待发送内容
+        bool hasPending() const { return hasPendingTx; }
 
     private:
         // 在缓冲区中查找指定字符串

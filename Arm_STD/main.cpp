@@ -21,22 +21,18 @@ Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
 Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
 
-bool wifiConnected = false; // WiFi连接状态
+bool test = false;
 
 // WiFi回调函数
 void wifi_callback(void *in)
 {
-    // Device::WIFI *wf = (Device::WIFI *)(in);
-    // bluetooth.printf("%s", wf->getBuffer());
-    // wifi.clear();
+    bluetooth.printf_late("%s", wifi.rxBuffer);
 }
-
-
 
 // 处理蓝牙命令
 void bt_fun(void *in)
 {
-    Device::Bluetooth*bt = static_cast<Device::Bluetooth*>(in);
+    Device::Bluetooth *bt = static_cast<Device::Bluetooth *>(in);
     if (bt->equal_case("test"))
     {
         wifi.sendString("AT\r\n");
@@ -48,7 +44,7 @@ void bt_fun(void *in)
     if (bt->equal_case("show"))
     {
         bluetooth.sendString(wifi.rxBuffer);
-    }   
+    }
     // 清空接收缓冲区
     bt->clear();
     bt->hasNewData = false;
@@ -62,21 +58,23 @@ int main(void)
     bluetooth.callback.fun = bt_fun;
     bluetooth.callback.arg = &bluetooth;
     wifi.init();
+    wifi.callback.fun = wifi_callback;
+    wifi.callback.arg = &wifi;
+
     // 主循环
     while (1)
     {
-        // 处理蓝牙接收
-        if (bluetooth.hasNewData)
+        // 检查并发送蓝牙待发送内容
+        if (bluetooth.hasPending())
         {
-            bluetooth.callback();
+            bluetooth.sendPending();
         }
 
-        // 处理WiFi接收
-        // if (wifi.hasNewData)
-        // {
-        //     bluetooth.printf("%s", wifi.getBuffer());
-        //     wifi.clear();
-        // }
+        // 检查并发送WiFi待发送内容
+        if (wifi.hasPending())
+        {
+            wifi.sendPending();
+        }
     }
 }
 // debug   27000

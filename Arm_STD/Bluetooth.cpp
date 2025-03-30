@@ -24,13 +24,12 @@ namespace Device
 
     // 构造函数初始化成员变量
     Bluetooth::Bluetooth(USART_TypeDef *_usart, uint32_t _baudRate = 9600)
-        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false)
+        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), hasNewData(false),
+          hasPendingTx(false), txLength(0)
     {
-        // 清空接收缓冲区
-        for (uint16_t i = 0; i < sizeof(rxBuffer); i++)
-        {
-            rxBuffer[i] = 0;
-        }
+        // 清空接收和发送缓冲区
+        memset(rxBuffer, 0, sizeof(rxBuffer));
+        memset(txBuffer, 0, sizeof(txBuffer));
     }
 
     // 初始化蓝牙模块的USART接口
@@ -501,5 +500,69 @@ namespace Device
         
         // 返回实际解析的参数数量（减去命令名）
         return result > 0 ? result - 1 : 0;
+    }
+
+    // 延迟打印方法实现
+    void Bluetooth::printf_late(const char *fmt, ...)
+    {
+        if (hasPendingTx) {
+            // 如果已经有待发送内容，不能再添加
+            return;
+        }
+        
+        va_list args;
+        va_start(args, fmt);
+        txLength = vsnprintf(txBuffer, sizeof(txBuffer) - 1, fmt, args);
+        va_end(args);
+        
+        // 确保字符串以null结尾
+        if (txLength >= 0 && txLength < (int)sizeof(txBuffer)) {
+            txBuffer[txLength] = '\0';
+        } else {
+            txBuffer[sizeof(txBuffer) - 1] = '\0';
+            txLength = sizeof(txBuffer) - 1;
+        }
+        
+        hasPendingTx = true;
+    }
+
+    // 先发送缓冲区内容，再发送当前字符串
+    void Bluetooth::printf_before(const char *fmt, ...)
+    {
+        // 先发送待发送的内容
+        if (hasPendingTx) {
+            sendString(txBuffer);
+            hasPendingTx = false;
+            txLength = 0;
+        }
+        
+        // 再发送当前内容
+        char buffer[128];
+        va_list args;
+        
+        va_start(args, fmt);
+        int length = vsnprintf(buffer, sizeof(buffer) - 1, fmt, args);
+        va_end(args);
+        
+        // 确保字符串以null结尾
+        if (length >= 0 && length < (int)sizeof(buffer)) {
+            buffer[length] = '\0';
+        } else {
+            buffer[sizeof(buffer) - 1] = '\0';
+        }
+        
+        sendString(buffer);
+    }
+
+    // 发送待发送的内容(在主循环中调用)
+    bool Bluetooth::sendPending()
+    {
+        if (hasPendingTx) {
+            sendString(txBuffer);
+            hasPendingTx = false;
+            txLength = 0;
+            return true;
+        }
+        return false;
     }
 } // namespace Device

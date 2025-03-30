@@ -13,10 +13,12 @@ namespace Device
     // 构造函数初始化成员变量
     WIFI::WIFI(USART_TypeDef *_usart, uint32_t _baudRate)
         : USARTx(_usart), baudRate(_baudRate), rxIndex(0),
-          status(Status::DISCONNECTED), hasNewData(false)
+          status(Status::DISCONNECTED), hasNewData(false),
+          hasPendingTx(false), txLength(0)
     {
-        // 清空接收缓冲区
+        // 清空接收和发送缓冲区
         memset(rxBuffer, 0, sizeof(rxBuffer));
+        memset(txBuffer, 0, sizeof(txBuffer));
     }
 
     // 初始化WiFi模块的USART接口
@@ -188,7 +190,15 @@ namespace Device
             // 存储收到的字符
             rxBuffer[rxIndex++] = data;
             // rxBuffer[rxIndex] = 0; // 始终确保字符串以0结尾
-            hasNewData = true;
+            if (rxBuffer[rxIndex - 1] == '\n' &&
+                rxBuffer[rxIndex - 2] == '\r')
+            {
+                hasNewData = true;
+                if (callback)
+                {
+                    callback();
+                }
+            }
         }
     }
 
@@ -293,12 +303,6 @@ namespace Device
 
             // 处理接收到的数据
             processReceivedChar(data);
-
-            // 如果有回调且数据已更新，触发回调
-            if (callback)
-            {
-                callback();
-            }
         }
     }
 
@@ -357,6 +361,70 @@ namespace Device
 
         // 发送格式化后的字符串
         sendString(buffer);
+    }
+
+    // 延迟打印方法实现
+    void WIFI::printf_late(const char *fmt, ...)
+    {
+        if (hasPendingTx) {
+            // 如果已经有待发送内容，不能再添加
+            return;
+        }
+        
+        va_list args;
+        va_start(args, fmt);
+        txLength = vsnprintf(txBuffer, sizeof(txBuffer) - 1, fmt, args);
+        va_end(args);
+        
+        // 确保字符串以null结尾
+        if (txLength >= 0 && txLength < (int)sizeof(txBuffer)) {
+            txBuffer[txLength] = '\0';
+        } else {
+            txBuffer[sizeof(txBuffer) - 1] = '\0';
+            txLength = sizeof(txBuffer) - 1;
+        }
+        
+        hasPendingTx = true;
+    }
+
+    // 先发送缓冲区内容，再发送当前字符串
+    void WIFI::printf_before(const char *fmt, ...)
+    {
+        // 先发送待发送的内容
+        if (hasPendingTx) {
+            sendString(txBuffer);
+            hasPendingTx = false;
+            txLength = 0;
+        }
+        
+        // 再发送当前内容
+        char buffer[256];
+        va_list args;
+        
+        va_start(args, fmt);
+        int length = vsnprintf(buffer, sizeof(buffer) - 1, fmt, args);
+        va_end(args);
+        
+        // 确保字符串以null结尾
+        if (length >= 0 && length < (int)sizeof(buffer)) {
+            buffer[length] = '\0';
+        } else {
+            buffer[sizeof(buffer) - 1] = '\0';
+        }
+        
+        sendString(buffer);
+    }
+
+    // 发送待发送的内容(在主循环中调用)
+    bool WIFI::sendPending()
+    {
+        if (hasPendingTx) {
+            sendString(txBuffer);
+            hasPendingTx = false;
+            txLength = 0;
+            return true;
+        }
+        return false;
     }
 
     // 检查接收缓冲区是否以指定前缀开头（区分大小写）
