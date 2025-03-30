@@ -12,7 +12,7 @@ namespace Device
 {
     // 构造函数初始化成员变量
     WIFI::WIFI(USART_TypeDef *_usart, uint32_t _baudRate)
-        : USARTx(_usart), baudRate(_baudRate), rxIndex(0), 
+        : USARTx(_usart), baudRate(_baudRate), rxIndex(0),
           status(Status::DISCONNECTED), hasNewData(false)
     {
         // 清空接收缓冲区
@@ -112,15 +112,19 @@ namespace Device
 
         // 使能USART
         USART_Cmd(USARTx, ENABLE);
-        
+
         // 设置中断处理
         this->setInterrupt();
-        
+
         // 初始化WiFi模块
         clear();
         System::delay(1000_ms); // 等待模块启动
         sendString("AT\r\n");
-        System::delay(2_s);
+        System::delay(1000_ms); // 等待模块启动
+
+        // sendString("AT\r\n");
+        // sendString("AT\r\n");
+        // sendString("AT\r\n");
 
         return true;
     }
@@ -183,7 +187,7 @@ namespace Device
         {
             // 存储收到的字符
             rxBuffer[rxIndex++] = data;
-            rxBuffer[rxIndex] = 0; // 始终确保字符串以0结尾
+            // rxBuffer[rxIndex] = 0; // 始终确保字符串以0结尾
             hasNewData = true;
         }
     }
@@ -233,24 +237,26 @@ namespace Device
     }
 
     bool WIFI::equal(const char *const in) { return strcmp(this->getBuffer(), in) == 0; }
-    
-    bool WIFI::equal_case(const char *const in) 
-    { 
-        const char* buffer = this->getBuffer();
-        
+
+    bool WIFI::equal_case(const char *const in)
+    {
+        const char *buffer = this->getBuffer();
+
         for (size_t i = 0; in[i] != '\0'; i++)
         {
             char c1 = buffer[i];
             char c2 = in[i];
-            
+
             // 转为小写比较
-            if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
-            if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
-            
+            if (c1 >= 'A' && c1 <= 'Z')
+                c1 += 32;
+            if (c2 >= 'A' && c2 <= 'Z')
+                c2 += 32;
+
             if (c1 != c2 || buffer[i] == '\0')
                 return false;
         }
-        
+
         return true;
     }
 
@@ -287,7 +293,7 @@ namespace Device
 
             // 处理接收到的数据
             processReceivedChar(data);
-            
+
             // 如果有回调且数据已更新，触发回调
             if (callback)
             {
@@ -312,7 +318,8 @@ namespace Device
             interruptType = System::Interrupt::Type::USART3_IRQHand;
         }
         System::Interrupt::registerHandler(
-            interruptType, [](void *self) { ((WIFI *)self)->handleInterrupt(); }, this);
+            interruptType, [](void *self)
+            { ((WIFI *)self)->handleInterrupt(); }, this);
     }
 
     // 获取缓冲区内容
@@ -330,8 +337,11 @@ namespace Device
     // 清空缓冲区
     void WIFI::clear()
     {
+        for (int i = 0; i < rxIndex; i++)
+        {
+            rxBuffer[i] = 0;
+        }
         rxIndex = 0;
-        rxBuffer[0] = 0;
         hasNewData = false;
     }
 
@@ -350,40 +360,42 @@ namespace Device
     }
 
     // 检查接收缓冲区是否以指定前缀开头（区分大小写）
-    bool WIFI::startsWith(const char* prefix) const
+    bool WIFI::startsWith(const char *prefix) const
     {
         size_t prefixLen = strlen(prefix);
         if (prefixLen > rxIndex)
             return false;
-            
+
         return (strncmp(rxBuffer, prefix, prefixLen) == 0);
     }
 
     // 检查接收缓冲区是否以指定前缀开头（不区分大小写）
-    bool WIFI::startsWith_case(const char* prefix) const
+    bool WIFI::startsWith_case(const char *prefix) const
     {
         size_t prefixLen = strlen(prefix);
         if (prefixLen > rxIndex)
             return false;
-            
+
         for (size_t i = 0; i < prefixLen; i++)
         {
             char c1 = rxBuffer[i];
             char c2 = prefix[i];
-            
+
             // 转为小写比较
-            if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
-            if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
-            
+            if (c1 >= 'A' && c1 <= 'Z')
+                c1 += 32;
+            if (c2 >= 'A' && c2 <= 'Z')
+                c2 += 32;
+
             if (c1 != c2)
                 return false;
         }
-        
+
         return true;
     }
 
     // 从缓冲区解析格式化输入
-    int WIFI::scanArgs(const char* format, ...)
+    int WIFI::scanArgs(const char *format, ...)
     {
         va_list args;
         va_start(args, format);
@@ -393,68 +405,68 @@ namespace Device
     }
 
     // 获取去除前缀后的参数部分
-    char* WIFI::getArgs(const char* prefix)
+    char *WIFI::getArgs(const char *prefix)
     {
         size_t prefixLen = strlen(prefix);
         if (!startsWith_case(prefix) || rxIndex <= prefixLen)
             return nullptr;
-        
+
         // 跳过前缀和一个可能的空格
         size_t offset = prefixLen;
         if (rxBuffer[offset] == ' ')
             offset++;
-            
+
         return &rxBuffer[offset];
     }
 
     // 从命令名后解析参数
-    int WIFI::scanCommandArgs(const char* cmdName, const char* format, ...)
+    int WIFI::scanCommandArgs(const char *cmdName, const char *format, ...)
     {
         // 检查命令前缀是否匹配
         if (!startsWith_case(cmdName))
             return 0;
-        
+
         // 创建完整格式字符串（命令名 + 格式）
         char fullFormat[128];
         snprintf(fullFormat, sizeof(fullFormat), "%s %s", cmdName, format);
-        
+
         // 解析参数
         va_list args;
         va_start(args, format);
         int result = vsscanf(rxBuffer, fullFormat, args);
         va_end(args);
-        
+
         // 返回实际解析的参数数量（减去命令名）
         return result > 0 ? result - 1 : 0;
     }
-    
+
     // WiFi特有功能
-    
+
     // 连接到WiFi网络
-    bool WIFI::connect(const char* ssid, const char* password, uint32_t timeout)
+    bool WIFI::connect(const char *ssid, const char *password, uint32_t timeout)
     {
         char cmd[128];
         snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
-        
+
         if (!executeCommand(cmd, "OK", timeout))
         {
             status = Status::ERROR;
             return false;
         }
-        
+
         status = Status::CONNECTED;
-        
+
         // 获取IP地址确认连接成功
         if (!executeCommand("AT+CIFSR\r\n", "OK", 1000))
         {
             status = Status::ERROR;
             return false;
         }
-        
+
         status = Status::GOT_IP;
         return true;
     }
-    
+
     // 断开WiFi连接
     bool WIFI::disconnect()
     {
@@ -462,29 +474,29 @@ namespace Device
         {
             return false;
         }
-        
+
         status = Status::DISCONNECTED;
         return true;
     }
-    
+
     // 获取当前IP地址
-    bool WIFI::getIP(char* ipBuffer, uint16_t bufferSize)
+    bool WIFI::getIP(char *ipBuffer, uint16_t bufferSize)
     {
         if (status != Status::GOT_IP)
         {
             return false;
         }
-        
+
         clear();
         sendString("AT+CIFSR\r\n");
         System::delay(500_ms);
-        
+
         // 解析IP地址
-        char* ipStart = strstr(rxBuffer, "STAIP,\"");
+        char *ipStart = strstr(rxBuffer, "STAIP,\"");
         if (ipStart != NULL)
         {
             ipStart += 7; // 跳过 "STAIP,"
-            char* ipEnd = strchr(ipStart, '\"');
+            char *ipEnd = strchr(ipStart, '\"');
             if (ipEnd != NULL)
             {
                 uint16_t ipLen = ipEnd - ipStart;
@@ -496,19 +508,19 @@ namespace Device
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     // 建立TCP连接
-    bool WIFI::connectTCP(const char* host, uint16_t port, uint32_t timeout)
+    bool WIFI::connectTCP(const char *host, uint16_t port, uint32_t timeout)
     {
         char cmd[128];
         snprintf(cmd, sizeof(cmd), "AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", host, port);
-        
+
         return executeCommand(cmd, "OK", timeout);
     }
-    
+
     // 关闭TCP连接
     bool WIFI::closeTCP()
     {
@@ -516,29 +528,29 @@ namespace Device
     }
 
     // 执行AT命令并等待响应
-    bool WIFI::executeCommand(const char* command, const char* expectedResponse, uint32_t timeout)
+    bool WIFI::executeCommand(const char *command, const char *expectedResponse, uint32_t timeout)
     {
         clear();
         sendString(command);
-        
+
         uint32_t startTime = System::millisecond();
         while ((System::millisecond() - startTime) < timeout)
         {
             if (findInBuffer(expectedResponse))
                 return true;
-            
+
             System::delay(10_ms);
         }
-        
+
         return false;
     }
-    
+
     // 在缓冲区中查找指定字符串
-    bool WIFI::findInBuffer(const char* str)
+    bool WIFI::findInBuffer(const char *str)
     {
         if (str == nullptr || rxBuffer[0] == '\0')
             return false;
-        
+
         return (strstr(rxBuffer, str) != nullptr);
     }
 } // namespace Device

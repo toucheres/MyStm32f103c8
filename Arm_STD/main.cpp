@@ -26,9 +26,9 @@ bool wifiConnected = false; // WiFi连接状态
 // WiFi回调函数
 void wifi_callback(void *in)
 {
-    Device::WIFI *wf = (Device::WIFI *)(in);
-    bluetooth.printf("%s", wf->getBuffer());
-    wifi.clear();
+    // Device::WIFI *wf = (Device::WIFI *)(in);
+    // bluetooth.printf("%s", wf->getBuffer());
+    // wifi.clear();
 }
 
 
@@ -37,10 +37,18 @@ void wifi_callback(void *in)
 void bt_fun(void *in)
 {
     Device::Bluetooth*bt = static_cast<Device::Bluetooth*>(in);
-    if (bt->equal_case("wifitest"))
+    if (bt->equal_case("test"))
     {
-        wifi.sendString("test\r\n");
+        wifi.sendString("AT\r\n");
     }
+    if (bt->equal_case("clear"))
+    {
+        wifi.clear();
+    }
+    if (bt->equal_case("show"))
+    {
+        bluetooth.sendString(wifi.rxBuffer);
+    }   
     // 清空接收缓冲区
     bt->clear();
     bt->hasNewData = false;
@@ -53,40 +61,7 @@ int main(void)
     bluetooth.init();
     bluetooth.callback.fun = bt_fun;
     bluetooth.callback.arg = &bluetooth;
-
-    // 初始化WiFi模块并检查是否成功
-    if (wifi.init())
-    {
-        oled.ShowString(0, 48, "WiFi Ready", Device::OLED::OLED_6X8);
-        bluetooth.printf("WiFi Ready\n");
-        wifi.callback.fun = wifi_callback;
-        wifi.callback.arg = &wifi;
-    }
-    else
-    {
-        oled.ShowString(0, 48, "WiFi Init Failed", Device::OLED::OLED_6X8);
-        bluetooth.printf("WiFi Init Failed\n");
-
-        bluetooth.sendString("WIFI init failed!\r\n");
-    }
-    wifi.sendString("AT\r\n");
-    System::delay(2_s);
-    bluetooth.sendString("Available commands:\r\n");
-    bluetooth.sendString("  RTC Commands:\r\n");
-    bluetooth.sendString("    time - show current time\r\n");
-    bluetooth.sendString("    settime HH:MM:SS - set current time\r\n");
-    bluetooth.sendString("    setalarm HH:MM:SS - set alarm time\r\n");
-    bluetooth.sendString("    alarmon - enable alarm\r\n");
-    bluetooth.sendString("    alarmoff - disable alarm\r\n");
-    bluetooth.sendString("  WiFi Commands:\r\n");
-    bluetooth.sendString("    wificonnect SSID PASSWORD - connect to WiFi\r\n");
-    bluetooth.sendString("    wifistatus - show WiFi status\r\n");
-    bluetooth.sendString("    wifiip - show IP address\r\n");
-    bluetooth.sendString("    wifidisconnect - disconnect from WiFi\r\n");
-    bluetooth.sendString("    wifitest - run connection test\r\n");
-    bluetooth.sendString("    wifiat [command] - send AT command to WiFi module\r\n");
-    bluetooth.sendString("    wifitest - run hardware connection test\r\n");
-
+    wifi.init();
     // 主循环
     while (1)
     {
@@ -99,8 +74,8 @@ int main(void)
         // 处理WiFi接收
         // if (wifi.hasNewData)
         // {
-        //     wifi.callback();
-        //     wifi.hasNewData = false; // 确保数据被处理后重置标志
+        //     bluetooth.printf("%s", wifi.getBuffer());
+        //     wifi.clear();
         // }
     }
 }
