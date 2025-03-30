@@ -102,6 +102,7 @@ namespace Device
 
         // 执行AT命令并等待响应
         bool executeCommand(const char* command, const char* expectedResponse, uint32_t timeout);
+        bool executeCommand_(const char* command, const char* expectedResponse, uint32_t timeout);
 
     private:
         // 在缓冲区中查找指定字符串

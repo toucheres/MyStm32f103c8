@@ -27,18 +27,8 @@ bool wifiConnected = false; // WiFi连接状态
 void wifi_callback(void *in)
 {
     Device::WIFI *wf = (Device::WIFI *)(in);
-
-    // 1. 打印接收到的数据
-    bluetooth.printf("wifiget:%s\n", wf->getBuffer());
-
-    // 2. 只在收到完整响应时清空缓冲区
-    if (strstr(wf->getBuffer(), "\r\nOK\r\n") ||
-        strstr(wf->getBuffer(), "\r\nERROR\r\n") ||
-        strstr(wf->getBuffer(), "SEND OK\r\n"))
-    {
-        // 处理完整响应后才清空
-        // wf->clear();  // 注意：在主循环中清空可能更合适
-    }
+    bluetooth.printf("%s", wf->getBuffer());
+    wifi.clear();
 }
 
 
@@ -49,46 +39,7 @@ void bt_fun(void *in)
     Device::Bluetooth*bt = static_cast<Device::Bluetooth*>(in);
     if (bt->equal_case("wifitest"))
     {
-        bt->sendString("Testing WiFi hardware connection...\r\n");
-
-        // 1. 清空WiFi接收缓冲区
-        wifi.clear();
-
-        // 2. 发送AT测试命令
-        wifi.sendString("AT\r\n");
-
-        // 3. 等待响应（设置合理的超时时间）
-        uint32_t startTime = System::millisecond();
-        bool responseReceived = false;
-        bool okFound = false;
-        System::delay(2_s);
-        // 检查是否收到OK响应
-        if (strstr(wifi.getBuffer(), "\r\nOK\r\n"))
-        {
-            bt->sendString("WiFi module responded with OK! Hardware connection successful.\r\n");
-            okFound = true;
-            responseReceived = true;
-        }
-        // 检查是否收到ERROR响应
-        else if (strstr(wifi.getBuffer(), "\r\nERROR\r\n"))
-        {
-            bt->sendString("WiFi module responded with ERROR!\r\n");
-            responseReceived = true;
-        }
-
-        // 4. 超时和结果报告
-        if (!responseReceived)
-        {
-            bt->printf("No proper response within timeout.\r\n");
-            bt->printf("Received buffer: %s\r\n", wifi.getBuffer());
-        }
-
-        // 5. 更新OLED显示
-        oled.ShowString(0, 48, okFound ? "WiFi OK" : "WiFi Failed", Device::OLED::OLED_6X8);
-        oled.Update();
-
-        // 6. 清空缓冲区为下次命令做准备
-        wifi.clear();
+        wifi.sendString("test\r\n");
     }
     // 清空接收缓冲区
     bt->clear();
@@ -118,6 +69,8 @@ int main(void)
 
         bluetooth.sendString("WIFI init failed!\r\n");
     }
+    wifi.sendString("AT\r\n");
+    System::delay(2_s);
     bluetooth.sendString("Available commands:\r\n");
     bluetooth.sendString("  RTC Commands:\r\n");
     bluetooth.sendString("    time - show current time\r\n");
@@ -144,11 +97,11 @@ int main(void)
         }
 
         // 处理WiFi接收
-        if (wifi.hasNewData)
-        {
-            wifi.callback();
-            wifi.hasNewData = false; // 确保数据被处理后重置标志
-        }
+        // if (wifi.hasNewData)
+        // {
+        //     wifi.callback();
+        //     wifi.hasNewData = false; // 确保数据被处理后重置标志
+        // }
     }
 }
 // debug   27000

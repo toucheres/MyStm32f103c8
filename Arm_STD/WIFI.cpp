@@ -119,19 +119,9 @@ namespace Device
         // 初始化WiFi模块
         clear();
         System::delay(1000_ms); // 等待模块启动
-        
-        // 测试AT通信
-        if (!executeCommand("AT\r\n", "OK", 1000))
-        {
-            return false;
-        }
-        
-        // 设置为单连接模式
-        if (!executeCommand("AT+CIPMUX=0\r\n", "OK", 1000))
-        {
-            return false;
-        }
-        
+        sendString("AT\r\n");
+        System::delay(2_s);
+
         return true;
     }
 

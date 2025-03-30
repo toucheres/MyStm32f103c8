@@ -402,8 +402,11 @@ namespace Device
     // 清空缓冲区
     void Bluetooth::clear()
     {
+        for (size_t i = 0; i < rxIndex; i++)
+        {
+            rxBuffer[i]=0;
+        }
         rxIndex = 0;
-        rxBuffer[0] = 0;
         hasNewData = false;
     }
 
