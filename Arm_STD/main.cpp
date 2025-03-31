@@ -1,19 +1,12 @@
 // filepath: [main.cpp](http://_vscodecontentref_/1)
 #include "RTE_Components.h"
-#include <cstdio>
 #include <cstdlib>
 #include CMSIS_device_header
 #include "MyStm32.h"
 #include "Bluetooth.h"
 #include "LED.h"
 #include "OLED.h"
-#include "ADC.h"
-#include "Timer.h"
-#include "PWM.h"
-#include "System.h"
-#include <string.h>
 #include "Interrupt.h"
-#include "RTC.h"
 #include "WIFI.h"
 
 Device::LED led{Port::A, Pin::Pin0};
@@ -22,11 +15,13 @@ Device::Bluetooth bluetooth{USART1, 9600};
 Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
 
 bool test = false;
-
+uint8_t times=0;
 // WiFi回调函数
 void wifi_callback(void *in)
 {
-    bluetooth.printf_late("%s", wifi.rxBuffer);
+    times++;
+    bluetooth.printf_late("times:%d,callback:%s\n", times,wifi.rxBuffer);
+    test = true;
 }
 
 // 处理蓝牙命令
@@ -43,7 +38,7 @@ void bt_fun(void *in)
     }
     if (bt->equal_case("show"))
     {
-        bluetooth.printf_late(wifi.rxBuffer);
+        bluetooth.printf_late("times:%d,show:%s\n", times, wifi.rxBuffer);
     }
     // 清空接收缓冲区
     bt->clear();
@@ -68,6 +63,11 @@ int main(void)
         if (bluetooth.hasPending())
         {
             bluetooth.sendPending();
+        }
+        if (test)
+        {
+            bluetooth.printf("times:%d,while:%s\n", times, wifi.rxBuffer);
+            test = false;
         }
 
         // 检查并发送WiFi待发送内容

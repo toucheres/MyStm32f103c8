@@ -505,18 +505,29 @@ namespace Device
     // 延迟打印方法实现
     void Bluetooth::printf_late(const char *fmt, ...)
     {
+        // 计算当前缓冲区已使用的长度
+        int currentLength = 0;
         if (hasPendingTx) {
-            // 如果已经有待发送内容，不能再添加
+            currentLength = txLength;
+        }
+        
+        // 确保缓冲区还有空间
+        if (currentLength >= (int)sizeof(txBuffer) - 1) {
+            // 缓冲区已满，无法追加
             return;
         }
         
         va_list args;
         va_start(args, fmt);
-        txLength = vsnprintf(txBuffer, sizeof(txBuffer) - 1, fmt, args);
+        // 在已有内容后追加新内容
+        int appendLength = vsnprintf(txBuffer + currentLength, 
+                                    sizeof(txBuffer) - currentLength - 1, 
+                                    fmt, args);
         va_end(args);
         
-        // 确保字符串以null结尾
-        if (txLength >= 0 && txLength < (int)sizeof(txBuffer)) {
+        // 确保字符串以null结尾并更新长度
+        if (appendLength >= 0 && (currentLength + appendLength) < (int)sizeof(txBuffer)) {
+            txLength = currentLength + appendLength;
             txBuffer[txLength] = '\0';
         } else {
             txBuffer[sizeof(txBuffer) - 1] = '\0';
