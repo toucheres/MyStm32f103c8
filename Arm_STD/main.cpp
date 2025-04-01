@@ -3,36 +3,37 @@
 #include <cstdio>
 #include <cstdlib>
 #include CMSIS_device_header
-#include "MyStm32.h"
 #include "Bluetooth.h"
-#include "LED.h"
-#include "OLED.h"
 #include "Interrupt.h"
-#include "WIFI.h"
+#include "LED.h"
+#include "MyStm32.h"
+#include "OLED.h"
 #include "System.h"
+#include "WIFI.h"
+
 Device::LED led{Port::A, Pin::Pin0};
 Device::OLED oled{Port::B, Pin::Pin8, Port::B, Pin::Pin9};
 Device::Bluetooth bluetooth{USART1, 9600};
 Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
 
 bool test = false;
-uint8_t times=0;
+uint8_t times = 0;
 // WiFi回调函数
-void wifi_callback(void *in)
+void wifi_callback(void* in)
 {
     times++;
-    
+
     // 转发WiFi模块收到的所有消息到蓝牙
     bluetooth.printf_late("WiFi[%d]: %s\n", times, wifi.rxBuffer);
-    
+
     // 检查是否收到TCP数据
     if (strstr(wifi.rxBuffer, "+IPD") != NULL)
     {
         // 解析数据
         int conn_id = 0;
         int len = 0;
-        char *data_start = NULL;
-        
+        char* data_start = NULL;
+
         // 尝试解析连接ID和数据长度 (+IPD,id,len:data)
         if (sscanf(wifi.rxBuffer, "+IPD,%d,%d:", &conn_id, &len) == 2)
         {
@@ -41,16 +42,16 @@ void wifi_callback(void *in)
             if (data_start != NULL)
             {
                 data_start++; // 跳过冒号
-                
+
                 // 显示收到的数据内容
                 bluetooth.printf_late("Data[%d] Len=%d: ", conn_id, len);
-                
+
                 // 限制显示长度，避免溢出
                 int show_len = (len > 32) ? 32 : len;
                 char temp[33] = {0}; // 最多显示32个字符加结束符
                 strncpy(temp, data_start, show_len);
                 bluetooth.printf_late("%s\n", temp);
-                
+
                 // 如果数据是
                 if (strncmp(data_start, "led change", 6) == 0)
                 {
@@ -63,15 +64,15 @@ void wifi_callback(void *in)
             }
         }
     }
-    
+
     test = true;
 }
 
 // 处理蓝牙命令
-void bt_fun(void *in)
+void bt_fun(void* in)
 {
-    Device::Bluetooth *bt = static_cast<Device::Bluetooth *>(in);
-    
+    Device::Bluetooth* bt = static_cast<Device::Bluetooth*>(in);
+
     // 测试AT命令
     if (bt->equal_case("test"))
     {
@@ -97,7 +98,7 @@ void bt_fun(void *in)
             wifi.printf_late("AT+CWMODE=1\r\n"); // 设置为station模式
             System::delay(500_ms);
             wifi.clear();
-            
+
             // 发送连接命令
             wifi.printf_late("AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
         }
@@ -119,12 +120,12 @@ void bt_fun(void *in)
         if (bt->scanCommandArgs("server", "%d", &port) == 1)
         {
             bluetooth.printf_late("Starting TCP server on port %d...\n", port);
-            
+
             // 设置为多连接模式
             wifi.printf_late("AT+CIPMUX=1\r\n");
             System::delay(500_ms);
             wifi.clear();
-            
+
             // 创建TCP服务器
             wifi.printf_late("AT+CIPSERVER=1,%d\r\n", port);
         }
@@ -141,12 +142,12 @@ void bt_fun(void *in)
         if (bt->scanCommandArgs("client", "%s %d", host, &port) == 2)
         {
             bluetooth.printf_late("Connecting to %s:%d...\n", host, port);
-            
+
             // 设置为单连接模式
             wifi.printf_late("AT+CIPMUX=0\r\n");
             System::delay(500_ms);
             wifi.clear();
-            
+
             // 连接到TCP服务器
             wifi.printf_late("AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", host, port);
         }
@@ -158,12 +159,12 @@ void bt_fun(void *in)
     // 发送数据: send,DATA 或 send,ID,DATA (多连接模式)
     else if (bt->startsWith_case("send"))
     {
-        char *args = bt->getArgs("send");
+        char* args = bt->getArgs("send");
         if (args)
         {
             int id = -1;
             char data[256];
-            
+
             // 检查是否指定了连接ID (多连接模式)
             if (sscanf(args, "%d,%s", &id, data) == 2)
             {
@@ -199,7 +200,7 @@ void bt_fun(void *in)
     {
         wifi.printf_late("AT+CIPSERVER=0\r\n");
     }
-    
+
     // 清空接收缓冲区
     bt->clear();
     bt->hasNewData = false;
@@ -215,7 +216,7 @@ int main(void)
     wifi.init();
     wifi.callback.fun = wifi_callback;
     wifi.callback.arg = &wifi;
-    
+
     // 显示初始化信息
     oled.ShowString(0, 0, "WiFi Ready", 12);
     oled.ShowString(0, 16, "BT: 9600", 12);
@@ -230,21 +231,21 @@ int main(void)
         {
             bluetooth.sendPending();
         }
-        
+
         if (test)
         {
             bluetooth.printf("times:%d,while:%s\n", times, wifi.rxBuffer);
             test = false;
-            
+
             // 更新OLED显示，每秒最多更新一次
             uint32_t currentTime = System::millisecond();
             if (currentTime - lastUpdateTime > 1000)
             {
                 lastUpdateTime = currentTime;
-                
+
                 // 清除状态行
                 oled.ShowString(0, 48, "                ", 12);
-                
+
                 // 显示当前状态
                 if (wifi.status == Device::WIFI::Status::GOT_IP)
                 {
