@@ -18,6 +18,8 @@ Device::WIFI wifi{USART2, 115200}; // 使用USART2初始化WiFi模块
 
 bool test = false;
 uint8_t times = 0;
+bool echo_mode = false; // 是否启用回声模式
+
 // WiFi回调函数
 void wifi_callback(void* in)
 {
@@ -61,6 +63,22 @@ void wifi_callback(void* in)
                     System::delay(100_ms);
                     wifi.printf_late("LED ON\r\n");
                 }
+                
+                // 如果回声模式开启，回发接收到的数据
+                if (echo_mode && len > 0)
+                {
+                    // 准备回发数据
+                    wifi.printf_late("AT+CIPSEND=%d,%d\r\n", conn_id, len);
+                    // System::delay(100_ms);
+                    
+                    // 回发原始数据
+                    for (int i = 0; i < len; i++)
+                    {
+                        wifi.printf_late("%c", data_start[i]);
+                    }
+                    
+                    bluetooth.printf_late("Echo back %d bytes to connection %d\n", len, conn_id);
+                }
             }
         }
     }
@@ -87,6 +105,51 @@ void bt_fun(void* in)
     else if (bt->equal_case("show"))
     {
         bluetooth.printf_late("times:%d,show:%s\n", times, wifi.rxBuffer);
+    }
+    // 开启/关闭回声模式
+    else if (bt->startsWith_case("echo"))
+    {
+        char* args = bt->getArgs("echo");
+        if (args && (strcmp(args, "on") == 0 || strcmp(args, "1") == 0))
+        {
+            echo_mode = true;
+            bluetooth.printf_late("Echo mode: ON\n");
+        }
+        else if (args && (strcmp(args, "off") == 0 || strcmp(args, "0") == 0))
+        {
+            echo_mode = false;
+            bluetooth.printf_late("Echo mode: OFF\n");
+        }
+        else
+        {
+            bluetooth.printf_late("Echo mode: %s\n", echo_mode ? "ON" : "OFF");
+            bluetooth.printf_late("Usage: echo on|off\n");
+        }
+    }
+    // 监听特定端口: listen,PORT
+    else if (bt->startsWith_case("listen"))
+    {
+        int port;
+        if (bt->scanCommandArgs("listen", "%d", &port) == 1)
+        {
+            bluetooth.printf_late("Starting TCP server on port %d with echo mode...\n", port);
+            
+            // 设置为多连接模式
+            wifi.printf_late("AT+CIPMUX=1\r\n");
+            System::delay(500_ms);
+            wifi.clear();
+            
+            // 创建TCP服务器
+            wifi.printf_late("AT+CIPSERVER=1,%d\r\n", port);
+            
+            // 自动开启回声模式
+            echo_mode = true;
+            bluetooth.printf_late("Echo mode: ON\n");
+        }
+        else
+        {
+            bluetooth.printf_late("Usage: listen PORT\n");
+        }
     }
     // 连接WiFi网络: connect,SSID,PASSWORD
     else if (bt->startsWith_case("connect"))
