@@ -1,4 +1,3 @@
-// filepath: [main.cpp](http://_vscodecontentref_/1)
 #include "RTE_Components.h"
 #include <cstdio>
 #include <cstdlib>
@@ -63,20 +62,20 @@ void wifi_callback(void* in)
                     System::delay(100_ms);
                     wifi.printf_late("LED ON\r\n");
                 }
-                
+
                 // 如果回声模式开启，回发接收到的数据
                 if (echo_mode && len > 0)
                 {
                     // 准备回发数据
                     wifi.printf_late("AT+CIPSEND=%d,%d\r\n", conn_id, len);
                     // System::delay(100_ms);
-                    
+
                     // 回发原始数据
                     for (int i = 0; i < len; i++)
                     {
                         wifi.printf_late("%c", data_start[i]);
                     }
-                    
+
                     bluetooth.printf_late("Echo back %d bytes to connection %d\n", len, conn_id);
                 }
             }
@@ -95,6 +94,16 @@ void bt_fun(void* in)
     if (bt->equal_case("test"))
     {
         wifi.printf_late("AT\r\n");
+    }
+    else if (bt->startsWith_case("cmd"))
+    {
+
+        char cmds[64];
+        bt->scanCommandArgs("cmd", "%s", cmds);
+        bluetooth.printf_late("getcmd %s\n", cmds);
+        wifi.printf_late("%s\r\n",cmds);
+        oled.Printf(0, 0, Device::OLED::OLED_6X8, "%s", cmds);
+        // wifi.printf_late();
     }
     // 清空WiFi缓冲区
     else if (bt->equal_case("clear"))
@@ -133,15 +142,15 @@ void bt_fun(void* in)
         if (bt->scanCommandArgs("listen", "%d", &port) == 1)
         {
             bluetooth.printf_late("Starting TCP server on port %d with echo mode...\n", port);
-            
+
             // 设置为多连接模式
             wifi.printf_late("AT+CIPMUX=1\r\n");
             System::delay(500_ms);
             wifi.clear();
-            
+
             // 创建TCP服务器
             wifi.printf_late("AT+CIPSERVER=1,%d\r\n", port);
-            
+
             // 自动开启回声模式
             echo_mode = true;
             bluetooth.printf_late("Echo mode: ON\n");
@@ -155,15 +164,18 @@ void bt_fun(void* in)
     else if (bt->startsWith_case("connect"))
     {
         char ssid[32], password[32];
-        if (bt->scanCommandArgs("connect", "%s %s", ssid, password) == 2)
+        // if (bt->scanCommandArgs("connect", "%s %s", ssid, password) == 2)
+        if (1)
         {
-            bluetooth.printf_late("Connecting to %s...\n", ssid);
+            // bluetooth.printf_late("Connecting to %s...\n", ssid);
+            //
             wifi.printf_late("AT+CWMODE=1\r\n"); // 设置为station模式
-            System::delay(500_ms);
+            System::delay(5_s);
             wifi.clear();
 
             // 发送连接命令
-            wifi.printf_late("AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
+            // wifi.printf_late("AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
+            wifi.printf_late("AT+CWJAP=\"Kar98K\",\"12345678\"\r\n", ssid, password);
         }
         else
         {
@@ -175,6 +187,11 @@ void bt_fun(void* in)
     {
         wifi.clear();
         wifi.printf_late("AT+CIFSR\r\n");
+    }
+    else if (bt->equal_case("wifistatus"))
+    {
+        wifi.clear();
+        wifi.printf_late("AT+CWSTATE\r\n");
     }
     // 创建TCP服务器: server,PORT
     else if (bt->startsWith_case("server"))
@@ -281,11 +298,10 @@ int main(void)
     wifi.callback.arg = &wifi;
 
     // 显示初始化信息
-    oled.ShowString(0, 0, "WiFi Ready", 12);
+    oled.ShowString(0, 0, "WiFi Ready", 12);                                                          
     oled.ShowString(0, 16, "BT: 9600", 12);
     oled.ShowString(0, 32, "WiFi: 115200", 12);
-
-    // 主循环
+    oled.Update();    // 主循环
     uint32_t lastUpdateTime = 0;
     while (1)
     {
