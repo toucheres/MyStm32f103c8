@@ -539,7 +539,7 @@ void Device::OLED::ShowImage(int16_t X, int16_t Y, uint8_t Width, uint8_t Height
     }
 }
 
-void Device::OLED::Printf(int16_t X, int16_t Y, uint8_t FontSize, char *format, ...)
+void Device::OLED::Printf(int16_t X, int16_t Y, uint8_t FontSize,const char *format, ...)
 {
     char String[256];                   // 定义字符数组
     va_list arg;                        // 定义可变参数列表数据类型的变量arg
